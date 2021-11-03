@@ -6,7 +6,7 @@ import math
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, head_num: int, model_dim: int):
+    def __init__(self, head_num: int, model_dim: int, drop_out=0.1):
         super().__init__()
 
         key_dim = model_dim // head_num
@@ -14,6 +14,7 @@ class MultiHeadAttention(nn.Module):
         assert key_dim * head_num == model_dim
 
         self.scale = 1 / math.sqrt(key_dim)
+        self.drop_out = drop_out
 
         self.head_num = head_num
         self.model_dim = model_dim
@@ -28,10 +29,10 @@ class MultiHeadAttention(nn.Module):
     def forward(
         self,
         net_input: torch.Tensor,
-        encoder_padding_mask: torch.Tensor,
+        padding_mask: torch.Tensor,
         attn_mask: Optional[torch.Tensor] = None,
-        prev_tokens: Optional[torch.Tensor] = None,
-        prev_token_mask: Optional[torch.Tensor] = None,
+        prev_input: Optional[torch.Tensor] = None,
+        prev_input_padding_mask: Optional[torch.Tensor] = None,
     ):
         """
             net_input: shape B x L x H
@@ -45,12 +46,12 @@ class MultiHeadAttention(nn.Module):
         net_input = net_input.transpose(0, 1)  # L x B x H
 
         q: torch.Tensor = self.q_proj(net_input)
-        if prev_tokens == None:
+        if prev_input == None:
             k = self.k_proj(net_input)
             v = self.v_proj(net_input)
         else:
-            k = self.k_proj(prev_tokens)
-            v = self.v_proj(prev_tokens)
+            k = self.k_proj(prev_input)
+            v = self.v_proj(prev_input)
 
         q = q.view(L, -1, self.key_dim)  # L x B*head_num x H//head_num
         k = k.view(L, -1, self.key_dim)
@@ -67,15 +68,15 @@ class MultiHeadAttention(nn.Module):
         if attn_mask != None:
             attn_weights = attn_weights + attn_mask
 
-        if encoder_padding_mask != None:
-            encoder_padding_mask = encoder_padding_mask.unsqueeze(
-                1
-            ) * encoder_padding_mask.unsqueeze(2)
-            attn_weights = attn_weights.masked_fill(encoder_padding_mask, float("-inf"))
+        if padding_mask != None:
+            padding_mask = padding_mask.unsqueeze(1) * padding_mask.unsqueeze(2)
+            attn_weights = attn_weights.masked_fill(padding_mask, float("-inf"))
 
-        if prev_token_mask != None:
-            prev_token_mask = prev_token_mask.unsqueeze(1)
-            attn_weights = attn_weights.masked_fill(prev_token_mask, float("-inf"))
+        if prev_input_padding_mask != None:
+            prev_input_padding_mask = prev_input_padding_mask.unsqueeze(1)
+            attn_weights = attn_weights.masked_fill(
+                prev_input_padding_mask, float("-inf")
+            )
 
         attn_weights = attn_weights.softmax(-1)
 
@@ -87,8 +88,9 @@ class MultiHeadAttention(nn.Module):
 
         res = self.fc(res)
 
-        res=res+net_input
-        res=F.layer_norm(res,res.shape[-2:])
+        res = F.dropout(res, self.drop_out)
+        res = res + net_input
+        res = F.layer_norm(res, res.shape[-2:])
 
         return res, attn_weights
 

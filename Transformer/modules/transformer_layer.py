@@ -5,9 +5,11 @@ from typing import Optional
 from Transformer.modules import MultiHeadAttention
 
 
-class TansformerLayer(nn.Module):
-    def __init__(self, head_num, model_dim, ffn_dim, post_norm=True):
+class TransformerLayer(nn.Module):
+    def __init__(self, head_num, model_dim, ffn_dim, drop_out=0.1, post_norm=True):
         super().__init__()
+
+        self.drop_out = drop_out
 
         self.attn = MultiHeadAttention(head_num, model_dim)
 
@@ -19,27 +21,27 @@ class TansformerLayer(nn.Module):
     def forward(
         self,
         net_input: torch.Tensor,
-        encoder_padding_mask: torch.Tensor,
+        padding_mask: torch.Tensor,
         attn_mask: Optional[torch.Tensor] = None,
-        prev_tokens: Optional[torch.Tensor] = None,
-        prev_token_mask: Optional[torch.Tensor] = None,
+        prev_input: Optional[torch.Tensor] = None,
+        prev_input_padding_mask: Optional[torch.Tensor] = None,
     ):
 
-        if prev_tokens != None:
+        if prev_input != None:
             attn_mask = torch.triu(
                 net_input.new_ones(net_input.shape, dtype=torch.bool), diagonal=1,
             )  # Future mask
-        else:
-            attn_mask = None
+            net_input, attn_weight = self.attn(net_input, padding_mask, attn_mask)
 
         mha_res, attn_weight = self.attn(
-            net_input, encoder_padding_mask, attn_mask, prev_tokens, prev_token_mask
+            net_input, padding_mask, None, prev_input, prev_input_padding_mask
         )
 
         x = self.fc1(mha_res)
         x = F.relu(x)
         x = self.fc2(x)
 
+        x = F.dropout(x, self.drop_out)
         x = x + mha_res
         x = F.layer_norm(x, x.shape[-2:])
 
