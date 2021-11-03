@@ -1,1 +1,1 @@
-from .cross_entropy import CrossEntropy
+from .cross_entropy_with_label_smoothing import CrossEntropyWithLabelSmoothing
