@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from typing import Optional
 import math
 
@@ -28,6 +29,7 @@ class MultiHeadAttention(nn.Module):
         self,
         net_input: torch.Tensor,
         encoder_padding_mask: torch.Tensor,
+        attn_mask: Optional[torch.Tensor] = None,
         prev_tokens: Optional[torch.Tensor] = None,
         prev_token_mask: Optional[torch.Tensor] = None,
     ):
@@ -62,14 +64,8 @@ class MultiHeadAttention(nn.Module):
 
         attn_weights = torch.bmm(q, k)  # B*head_num x L x L
 
-        if prev_tokens != None:
-            attn_weights = attn_weights.masked_fill(
-                torch.triu(
-                    attn_weights.new_ones(attn_weights.shape, dtype=torch.bool),
-                    diagonal=1,
-                ),
-                float("-inf"),
-            )  # Future mask
+        if attn_mask != None:
+            attn_weights = attn_weights + attn_mask
 
         if encoder_padding_mask != None:
             encoder_padding_mask = encoder_padding_mask.unsqueeze(
@@ -90,6 +86,9 @@ class MultiHeadAttention(nn.Module):
         res = res.transpose(0, 1)
 
         res = self.fc(res)
+
+        res=res+net_input
+        res=F.layer_norm(res,res.shape[-2:])
 
         return res, attn_weights
 
