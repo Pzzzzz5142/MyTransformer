@@ -3,6 +3,7 @@ from numpy.core.fromnumeric import argsort
 import torch
 from torch.utils.data import Dataset, RandomSampler, DataLoader, IterableDataset
 from torch.utils.data.dataset import T_co
+from torch.utils.data.sampler import SequentialSampler
 from Transformer.data import prepare_monolingual_dataset, MonolingualDataset
 from typing import Iterator
 
@@ -141,7 +142,7 @@ class LanguagePairIterableDataset(IterableDataset):
     def __iter__(self) -> Iterator[T_co]:
         batch_sampler = []
         for batch in self.batch_sampler:
-            sampler = RandomSampler(batch)
+            sampler = [batch[i] for i in RandomSampler(batch)]
             batch = []
             max_tgt_len = 0
             max_src_len = 0
@@ -165,7 +166,7 @@ class LanguagePairIterableDataset(IterableDataset):
                 ]
                 batch.append(data)
             batch_sampler.append(batch)
-        sample_ind = RandomSampler([j for j in range(len(batch_sampler))])
+        sample_ind = RandomSampler(batch_sampler)
         for ind in sample_ind:
             yield batch_sampler[ind]
 
