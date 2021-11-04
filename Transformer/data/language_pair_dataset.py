@@ -1,16 +1,37 @@
 import numpy as np
-from numpy.core.fromnumeric import argsort, sort
-from torch.utils.data import Dataset, BatchSampler
+from numpy.core.fromnumeric import argsort
+import torch
+from torch.utils.data import Dataset, RandomSampler, DataLoader, IterableDataset
 from torch.utils.data.dataset import T_co
 from Transformer.data import prepare_monolingual_dataset, MonolingualDataset
+from typing import Iterator
 
 
-def collate_fn(samples):  # form samples into batches
-    ...
+def collate_fn(samples: list):  # form samples into batches
+    ind = []
+    input_tokens = []
+    output_tokens = []
+    target = []
+    samples.pop()
+    for sample in samples:
+        ind.append(sample["id"])
+        data = sample["data"]
+        input_tokens.append(data["src_lang"])
+        output_tokens.append(data["tgt_lang"])
+        target.append(data["target"])
+
+    return {
+        "id": torch.LongTensor(ind),
+        "net_input": {
+            "input_tokens": torch.LongTensor(input_tokens),
+            "output_tokens": torch.LongTensor(output_tokens),
+        },
+        "target": torch.LongTensor(target),
+    }
 
 
 def batch_by_size(
-    src, tgt, max_tokens, strategy="src_tgt", long_first=True
+    src, tgt, max_tokens, strategy="tgt_src", long_first=True
 ):  # prepare batch sampler
 
     assert strategy in ["src_tgt", "tgt_src", "shuffle", "src", "tgt"]
@@ -98,10 +119,55 @@ class LanguagePairDataset(Dataset):
         self.tgt = tgt
 
     def __getitem__(self, index) -> T_co:
-        return {"src_lang": self.src[index], "tgt_lang": self.tgt[index]}
+        return {
+            "id": index,
+            "data": {
+                "src_lang": self.src[index]["data"]["source"],
+                "tgt_lang": self.tgt[index]["data"]["source"],
+                "target": self.tgt[index]["data"]["target"],
+            },
+        }
 
     def __len__(self):
         return len(self.src)
+
+
+class LanguagePairIterableDataset(IterableDataset):
+    def __init__(self, dataset: LanguagePairDataset, batch_sampler) -> None:
+        super().__init__()
+        self.dataset = dataset
+        self.batch_sampler = batch_sampler
+
+    def __iter__(self) -> Iterator[T_co]:
+        batch_sampler = []
+        for batch in self.batch_sampler:
+            sampler = RandomSampler(batch)
+            batch = []
+            max_tgt_len = 0
+            max_src_len = 0
+            for sample in sampler:
+                data = self.dataset[sample]
+                max_src_len = max(max_src_len, len(data["data"]["src_lang"]))
+                max_tgt_len = max(max_tgt_len, len(data["data"]["tgt_lang"]))
+            for sample in sampler:
+                data = self.dataset[sample]
+                data["data"]["src_lang"] = [
+                    self.dataset.src.word_dict.padding_idx
+                    for _ in range(max_src_len - len(data["data"]["src_lang"]))
+                ] + data["data"]["src_lang"]
+                data["data"]["tgt_lang"] += [
+                    self.dataset.tgt.word_dict.padding_idx
+                    for _ in range(max_tgt_len - len(data["data"]["tgt_lang"]))
+                ]
+                data["data"]["target"] += [
+                    self.dataset.tgt.word_dict.padding_idx
+                    for _ in range(max_tgt_len - len(data["data"]["target"]))
+                ]
+                batch.append(data)
+            batch_sampler.append(batch)
+        sample_ind = RandomSampler([j for j in range(len(batch_sampler))])
+        for ind in sample_ind:
+            yield batch_sampler[ind]
 
 
 def prepare_language_pair_dataset(data_path, src_lang, tgt_lang, split):
@@ -110,3 +176,27 @@ def prepare_language_pair_dataset(data_path, src_lang, tgt_lang, split):
     tgt = prepare_monolingual_dataset(data_path, tgt_lang, split, target="future")
 
     return LanguagePairDataset(src, tgt)
+
+
+def prepare_dataloader(
+    data_path,
+    src_lang,
+    tgt_lang,
+    split,
+    max_tokens,
+    strategy="tgt_src",
+    long_first=True,
+):
+
+    dataset = prepare_language_pair_dataset(data_path, src_lang, tgt_lang, split)
+    batch_sampler, info = batch_by_size(
+        dataset.src.data,
+        dataset.tgt.data,
+        max_tokens,
+        strategy=strategy,
+        long_first=long_first,
+    )
+
+    iter_dataset = LanguagePairIterableDataset(dataset, batch_sampler)
+
+    return DataLoader(iter_dataset, None, collate_fn=collate_fn)

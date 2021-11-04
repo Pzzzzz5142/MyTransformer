@@ -65,7 +65,7 @@ class TransformerDecoder(nn.Module):
         return x
 
 
-class TransformerEncoderDecoder(nn.Module):
+class Transformer(nn.Module):
     def __init__(
         self,
         vocab_size,

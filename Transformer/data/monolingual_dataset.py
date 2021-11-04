@@ -1,9 +1,8 @@
 from torch.utils.data.dataset import T_co
 from Transformer.data import WordDict
-from torch.utils.data import Dataset, BatchSampler
+from torch.utils.data import Dataset
 import os.path as path
 import pickle
-import numpy as np
 
 
 def collate_fn(samples):  # form samples into batches
@@ -21,7 +20,7 @@ class MonolingualDataset(Dataset):
         self.data = data
         self.word_dict = word_dict
 
-        assert target in ["future", "past", "present"]
+        assert target in ["future", "past", "present", "none"]
 
         self.target = target
 
@@ -39,10 +38,12 @@ class MonolingualDataset(Dataset):
         elif self.target == "present":
             target = [self.word_dict.bos_idx] + target + [self.word_dict.eos_idx]
             source = source + [self.word_dict.eos_idx]
+        elif self.target == "none":
+            target = None
         else:
             raise Exception(f"Target type {self.target} is not supported!")
 
-        return {"source": source, "target": target}
+        return {"id": index, "data": {"source": source, "target": target}}
 
     def __len__(self):
         return len(self.data)
