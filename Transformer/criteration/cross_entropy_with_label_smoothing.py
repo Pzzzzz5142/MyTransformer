@@ -8,7 +8,9 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
 
         self.eps = eps
 
-    def forward(self, net_output: torch.Tensor, target: torch.Tensor):
+    def forward(self, model, net_input: dict, target: torch.Tensor):
+
+        net_output = model(**net_input)
 
         log_prob = net_output.view(-1, net_output.shape[-1]).log_softmax(-1)
         target = target.view(-1, target.shape[-1]).unsqueeze(-1)

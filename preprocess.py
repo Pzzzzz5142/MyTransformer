@@ -1,7 +1,6 @@
 from argparse import ArgumentParser
 import os.path as path
 from multiprocessing import Pool
-import torch
 import os
 import pickle
 
