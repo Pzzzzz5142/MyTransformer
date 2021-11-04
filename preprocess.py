@@ -100,8 +100,8 @@ def solve(args):
 
             for res in result:
                 res = res.get()
-                src_res.append(res[0])
-                tgt_res.append(res[1])
+                src_res += res[0]
+                tgt_res += res[1]
 
         with open(
             path.join(dist_dir, f"{split}.{args.source_lang}"), "wb"

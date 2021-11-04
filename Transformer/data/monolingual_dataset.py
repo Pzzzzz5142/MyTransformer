@@ -1,7 +1,17 @@
-import torch
-from torch.utils.data import Dataset, BatchSampler
 from torch.utils.data.dataset import T_co
 from Transformer.data import WordDict
+from torch.utils.data import Dataset, BatchSampler
+import os.path as path
+import pickle
+import numpy as np
+
+
+def collate_fn(samples):  # form samples into batches
+    ...
+
+
+def batch_by_size(data: list, strategy="sort"):  # prepare batch sampler
+    ...
 
 
 class MonolingualDataset(Dataset):
@@ -38,15 +48,10 @@ class MonolingualDataset(Dataset):
         return len(self.data)
 
 
-class LanguagePairDataset(Dataset):
-    def __init__(self, src, tgt) -> None:
-        super().__init__()
-        assert len(src) == len(tgt)
-        self.src = src
-        self.tgt = tgt
+def prepare_monolingual_dataset(data_path, lang, split, target):
+    with open(path.join(data_path, f"{split}.{lang}"), "rb") as fl:
+        data = pickle.load(fl)
 
-    def __getitem__(self, index) -> T_co:
-        return {"src_lang": self.src[index], "tgt_lang": self.tgt[index]}
+    word_dict = WordDict(path.join(data_path, "dict.txt"))
 
-    def __len__(self):
-        return len(self.src)
+    return MonolingualDataset(word_dict, data, target)
