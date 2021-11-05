@@ -1,0 +1,5 @@
+model_dim: 512
+ffn_dim: 2048
+head_num: 8
+encoder_layers: 6
+decoder_layers: 6

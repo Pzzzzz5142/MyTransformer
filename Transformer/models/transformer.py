@@ -18,7 +18,7 @@ class TransformerEncoder(nn.Module):
             ]
         )
 
-    def foward(
+    def forward(
         self,
         net_input: torch.Tensor,
         padding_mask: torch.Tensor,
@@ -46,7 +46,7 @@ class TransformerDecoder(nn.Module):
             ]
         )
 
-    def foward(
+    def forward(
         self,
         net_input: torch.Tensor,
         padding_mask: torch.Tensor,
@@ -75,7 +75,7 @@ class Transformer(nn.Module):
         head_num,
         encoder_layers,
         decoder_layers,
-        share_embeddings,
+        share_embeddings=True,
     ):
         super().__init__()
 
@@ -102,7 +102,7 @@ class Transformer(nn.Module):
             model_dim, vocab_size if isinstance(vocab_size, int) else vocab_size[1]
         )
 
-    def foward(self, input_tokens, output_tokens):
+    def forward(self, input_tokens, output_tokens):
 
         en_padding_mask = input_tokens == self.padding_idx
 

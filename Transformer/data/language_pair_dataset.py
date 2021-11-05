@@ -170,6 +170,9 @@ class LanguagePairIterableDataset(IterableDataset):
         for ind in sample_ind:
             yield batch_sampler[ind]
 
+    def __len__(self):
+        return len(self.batch_sampler)
+
 
 def prepare_language_pair_dataset(data_path, src_lang, tgt_lang, split):
 
@@ -188,7 +191,6 @@ def prepare_dataloader(
     strategy="tgt_src",
     long_first=True,
 ):
-
     dataset = prepare_language_pair_dataset(data_path, src_lang, tgt_lang, split)
     batch_sampler, info = batch_by_size(
         dataset.src.data,
@@ -200,4 +202,5 @@ def prepare_dataloader(
 
     iter_dataset = LanguagePairIterableDataset(dataset, batch_sampler)
 
-    return DataLoader(iter_dataset, None, collate_fn=collate_fn)
+    return DataLoader(iter_dataset, None, collate_fn=collate_fn), dataset.src.word_dict
+

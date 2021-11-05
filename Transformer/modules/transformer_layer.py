@@ -13,8 +13,6 @@ class TransformerLayer(nn.Module):
 
         self.attn = MultiHeadAttention(head_num, model_dim)
 
-        self.layer_norm = nn.LayerNorm()
-
         self.fc1 = nn.Linear(model_dim, ffn_dim)
         self.fc2 = nn.Linear(ffn_dim, model_dim)
 
@@ -28,8 +26,13 @@ class TransformerLayer(nn.Module):
     ):
 
         if prev_input != None:
+            assert net_input.shape[0] == prev_input.shape[0]
             attn_mask = torch.triu(
-                net_input.new_ones(net_input.shape, dtype=torch.bool), diagonal=1,
+                net_input.new_ones(
+                    (net_input.shape[0], net_input.shape[1], net_input.shape[1]),
+                    dtype=torch.bool,
+                ),
+                diagonal=1,
             )  # Future mask
             net_input, attn_weight = self.attn(net_input, padding_mask, attn_mask)
 
