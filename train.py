@@ -23,6 +23,7 @@ def init_option(parser: ArgumentParser):
     parser.add_argument("--model-config", default="config/base.yaml")
     parser.add_argument("--warmup-steps", type=int, default=4000)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--epoch", default=3, type=int)
 
     # data settings
     parser.add_argument("--data", required=True)
@@ -55,9 +56,21 @@ def train(
             print(float(loss) / sample_size)
 
 
-def valid():
+def valid(
+    model: nn.Module,
+    criteration: nn.Module,
+    valid_data: DataLoader,
+    device: torch.device,
+):
     with torch.no_grad():
-        ...
+        total_loss = 0
+        total_sample = 0
+        for samples in tqdm(valid_data):
+            samples = samples.to(device).get_batch()
+            loss, sample_size = criteration(model, **samples)
+            total_loss += loss
+            total_sample += sample_size
+        print(float(total_loss / total_sample))
 
 
 def trainer(args):
@@ -105,7 +118,10 @@ def trainer(args):
     )
     criteration = CrossEntropyWithLabelSmoothing(args.label_smoothing_eps)
 
-    train(model, criteration, train_data, optim, scheduler, device)
+    for _ in range(args.epoch):
+        train(model, criteration, train_data, optim, scheduler, device)
+
+        valid(model, criteration, valid_data, device)
 
 
 if __name__ == "__main__":
