@@ -51,7 +51,7 @@ def solve(args):
         for ind, line in enumerate(vocab.readlines()):
             line = line.strip().split()
             word2ind[line[0]] = ind + 4
-            vocab_size = ind + 4
+            vocab_size = ind + 5
 
     os.makedirs(dist_dir)
 
