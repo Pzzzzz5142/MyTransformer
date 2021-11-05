@@ -2,7 +2,7 @@ class WordDict(object):
     def __init__(self, word_dict_path) -> None:
         super().__init__()
 
-        with open(word_dict_path, "r") as f:
+        with open(word_dict_path, "r", encoding="utf-8") as f:
             self.vocab_size = int(f.readline().strip())
             self.word_dict = {}
             for line in f.readlines():

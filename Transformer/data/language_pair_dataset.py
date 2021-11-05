@@ -8,6 +8,42 @@ from Transformer.data import prepare_monolingual_dataset, MonolingualDataset
 from typing import Iterator
 
 
+class PinMemoryBatch(object):
+    def __init__(self, id, input_tokens, output_tokens, target) -> None:
+        self.batch = {
+            "id": torch.LongTensor(id),
+            "net_input": {
+                "input_tokens": torch.LongTensor(input_tokens),
+                "output_tokens": torch.LongTensor(output_tokens),
+            },
+            "target": torch.LongTensor(target),
+        }
+
+    def pin_memery(self):
+        self.batch["id"] = self.batch["id"].pin_memory()
+        self.batch["net_input"]["input_tokens"] = self.batch["net_input"][
+            "input_tokens"
+        ].pin_memory()
+        self.batch["net_input"]["output_tokens"] = self.batch["net_input"][
+            "output_tokens"
+        ].pin_memory()
+        self.batch["target"] = self.batch["target"].pin_memory()
+
+    def to(self, device: torch.device):
+        self.batch["id"] = self.batch["id"].to(device)
+        self.batch["net_input"]["input_tokens"] = self.batch["net_input"][
+            "input_tokens"
+        ].to(device)
+        self.batch["net_input"]["output_tokens"] = self.batch["net_input"][
+            "output_tokens"
+        ].to(device)
+        self.batch["target"] = self.batch["target"].to(device)
+        return self
+
+    def get_batch(self):
+        return self.batch
+
+
 def collate_fn(samples: list):  # form samples into batches
     ind = []
     input_tokens = []
@@ -21,14 +57,7 @@ def collate_fn(samples: list):  # form samples into batches
         output_tokens.append(data["tgt_lang"])
         target.append(data["target"])
 
-    return {
-        "id": torch.LongTensor(ind),
-        "net_input": {
-            "input_tokens": torch.LongTensor(input_tokens),
-            "output_tokens": torch.LongTensor(output_tokens),
-        },
-        "target": torch.LongTensor(target),
-    }
+    return PinMemoryBatch(ind, input_tokens, output_tokens, target)
 
 
 def batch_by_size(
@@ -202,5 +231,8 @@ def prepare_dataloader(
 
     iter_dataset = LanguagePairIterableDataset(dataset, batch_sampler)
 
-    return DataLoader(iter_dataset, None, collate_fn=collate_fn), dataset.src.word_dict
+    return (
+        DataLoader(iter_dataset, None, collate_fn=collate_fn, pin_memory=True),
+        dataset.src.word_dict,
+    )
 

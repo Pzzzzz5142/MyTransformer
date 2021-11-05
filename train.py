@@ -3,7 +3,7 @@ import torch
 from torch.optim.optimizer import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from Transformer.models import Transformer
-from Transformer.data import prepare_dataloader
+from Transformer.data import prepare_dataloader, PinMemoryBatch
 from Transformer.criteration import CrossEntropyWithLabelSmoothing
 from argparse import ArgumentParser
 from torch.optim import AdamW
@@ -25,7 +25,7 @@ def init_option(parser: ArgumentParser):
 
     # data settings
     parser.add_argument("--data", required=True)
-    parser.add_argument("--max-tokens", default=4096)
+    parser.add_argument("--max-tokens", type=int, default=4096)
     parser.add_argument("--src-lang", required=True)
     parser.add_argument("--tgt-lang", required=True)
     parser.add_argument("--batching-strategy", default="tgt_src")
@@ -37,10 +37,12 @@ def init_option(parser: ArgumentParser):
 def train(
     model: nn.Module,
     criteration: nn.Module,
-    samples: list,
+    samples: PinMemoryBatch,
     optim: Optimizer,
     scheduler: _LRScheduler,
+    device: torch.device,
 ):
+    samples = samples.to(device).get_batch()
     optim.zero_grad()
     loss = criteration(model, **samples)
     loss.backward()
@@ -55,6 +57,15 @@ def valid():
 
 def trainer(args):
 
+    if args.device == "cuda":
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            UserWarning("No Cuda detected. Running on cpu.")
+            device = torch.device("cpu")
+    else:
+        device = torch.device("cpu")
+
     valid_data, vocab_info = prepare_dataloader(
         args.data,
         args.src_lang,
@@ -65,9 +76,11 @@ def trainer(args):
         args.batching_long_first,
     )
 
-    with open(args.model_config, "r") as model_config:
+    with open(args.model_config, "r", encoding="utf-8") as model_config:
         model_dict = yaml.load(model_config, Loader=Loader)
-        model = Transformer(vocab_info.vocab_size, vocab_info.padding_idx, **model_dict)
+        model = Transformer(
+            vocab_info.vocab_size, vocab_info.padding_idx, **model_dict
+        ).to(device)
 
     train_data, _ = prepare_dataloader(
         args.data,
@@ -79,15 +92,6 @@ def trainer(args):
         args.batching_long_first,
     )
 
-    device = args.device
-
-    if args.device == "cuda":
-        if torch.cuda.is_available():
-            model = model.cuda()
-        else:
-            UserWarning("No Cuda detected. Running on cpu.")
-            device = "cpu"
-
     print(model)
 
     optim = AdamW(model.parameters(), betas=args.adam_betas, eps=args.adam_eps)
@@ -97,7 +101,7 @@ def trainer(args):
     criteration = CrossEntropyWithLabelSmoothing(args.label_smoothing_eps)
 
     for samples in tqdm(train_data):
-        train(model, criteration, samples, optim, scheduler)
+        train(model, criteration, samples, optim, scheduler, device)
 
 
 if __name__ == "__main__":

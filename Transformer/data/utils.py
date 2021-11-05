@@ -13,7 +13,7 @@ def batch_by_size(data):  # prepare batch sampler
 
 
 def prepare_monolingual_dataset(data_path, lang, split, target):
-    with open(path.join(data_path, f"{split}.{lang}"), "r") as fl:
+    with open(path.join(data_path, f"{split}.{lang}"), "r", encoding="utf-8") as fl:
         data = pickle.load(fl)
 
     word_dict = WordDict(path.join(data_path, "dict.txt"))

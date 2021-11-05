@@ -42,11 +42,11 @@ def solve(args):
     word2ind = {"<pad>": 0, "<bos>": 1, "<eos>": 2, "<unk>": 3}
 
     root_dir: str = args.data_path
-    if root_dir[-1] == "/":
+    if root_dir[-1] in ["/", "\\"]:
         root_dir = root_dir[:-1]
     dist_dir = path.join(args.dist_dir, path.basename(root_dir))
 
-    with open(path.join(root_dir, args.vocab_name), "r") as vocab:
+    with open(path.join(root_dir, args.vocab_name), "r", encoding="utf-8") as vocab:
         vocab_size = 0
         for ind, line in enumerate(vocab.readlines()):
             line = line.strip().split()
@@ -55,15 +55,17 @@ def solve(args):
 
     os.makedirs(dist_dir)
 
-    with open(path.join(dist_dir, "dict.txt"), "w") as fl:
+    with open(path.join(dist_dir, "dict.txt"), "w", encoding="utf-8") as fl:
         print(vocab_size, file=fl)
         for k, v in word2ind.items():
             print(f"{k} {v}", file=fl)
 
     for split in ["test", "train", "valid"]:
         pool = Pool(args.workers)
-        with open(path.join(root_dir, f"{split}.{args.source_lang}"), "r") as src, open(
-            path.join(root_dir, f"{split}.{args.target_lang}"), "r"
+        with open(
+            path.join(root_dir, f"{split}.{args.source_lang}"), "r", encoding="utf-8"
+        ) as src, open(
+            path.join(root_dir, f"{split}.{args.target_lang}"), "r", encoding="utf-8"
         ) as tgt:
 
             src_res = []
