@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from torch.optim.optimizer import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
+from torch.utils.data.dataloader import DataLoader
 from Transformer.models import Transformer
 from Transformer.data import prepare_dataloader, PinMemoryBatch
 from Transformer.criteration import CrossEntropyWithLabelSmoothing
@@ -37,17 +38,21 @@ def init_option(parser: ArgumentParser):
 def train(
     model: nn.Module,
     criteration: nn.Module,
-    samples: PinMemoryBatch,
+    train_data: DataLoader,
     optim: Optimizer,
     scheduler: _LRScheduler,
     device: torch.device,
 ):
-    samples = samples.to(device).get_batch()
-    optim.zero_grad()
-    loss = criteration(model, **samples)
-    loss.backward()
-    optim.step()
-    scheduler.step()
+    for ind, samples in tqdm(enumerate(train_data)):
+        samples = samples.to(device).get_batch()
+        optim.zero_grad()
+        loss, sample_size = criteration(model, **samples)
+        loss.backward()
+        optim.step()
+        scheduler.step()
+
+        if ind % 100 == 0:
+            print(float(loss) / sample_size)
 
 
 def valid():
@@ -100,8 +105,7 @@ def trainer(args):
     )
     criteration = CrossEntropyWithLabelSmoothing(args.label_smoothing_eps)
 
-    for samples in tqdm(train_data):
-        train(model, criteration, samples, optim, scheduler, device)
+    train(model, criteration, train_data, optim, scheduler, device)
 
 
 if __name__ == "__main__":

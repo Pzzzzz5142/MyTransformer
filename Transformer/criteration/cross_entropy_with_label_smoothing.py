@@ -23,5 +23,5 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
 
         loss = true_loss * true_weight + false_loss * false_weight
 
-        return loss.sum()
+        return loss.sum(), target.shape[0]
 
