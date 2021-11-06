@@ -4,6 +4,8 @@
 
 ## 已实现部分
 
++ 大量的 BUG。
+
 + Data preprocessing
 
 + DataLoading
@@ -11,3 +13,5 @@
 + Transformer 模型
 
 + Label smooth cross entropy
+
++ Training 部分
