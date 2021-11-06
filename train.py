@@ -9,7 +9,7 @@ from Transformer.criteration import CrossEntropyWithLabelSmoothing
 from argparse import ArgumentParser
 from torch.optim import AdamW
 from Transformer.handle import TransformerLrScheduler
-import yaml
+import yaml, os
 from yaml import Loader
 from tqdm import tqdm
 
@@ -24,6 +24,7 @@ def init_option(parser: ArgumentParser):
     parser.add_argument("--warmup-steps", type=int, default=4000)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--epoch", default=3, type=int)
+    parser.add_argument("--save-dir", default="")
 
     # data settings
     parser.add_argument("--data", required=True)
@@ -37,14 +38,17 @@ def init_option(parser: ArgumentParser):
 
 
 def train(
+    epoch: int,
     model: nn.Module,
     criteration: nn.Module,
     train_data: DataLoader,
+    valid_data: DataLoader,
     optim: Optimizer,
     scheduler: _LRScheduler,
+    save_dir: str,
     device: torch.device,
 ):
-    for ind, samples in tqdm(enumerate(train_data)):
+    for ind, samples in enumerate(tqdm(train_data)):  # Training
         samples = samples.to(device).get_batch()
         optim.zero_grad()
         loss, sample_size = criteration(model, **samples)
@@ -53,16 +57,9 @@ def train(
         scheduler.step()
 
         if ind % 100 == 0:
-            print(float(loss) / sample_size)
+            print(f"Training loss: {float(loss) / sample_size}")
 
-
-def valid(
-    model: nn.Module,
-    criteration: nn.Module,
-    valid_data: DataLoader,
-    device: torch.device,
-):
-    with torch.no_grad():
+    with torch.no_grad():  # Validating
         total_loss = 0
         total_sample = 0
         for samples in tqdm(valid_data):
@@ -70,7 +67,10 @@ def valid(
             loss, sample_size = criteration(model, **samples)
             total_loss += loss
             total_sample += sample_size
-        print(float(total_loss / total_sample))
+        print(f"Valid loss: {float(total_loss / total_sample)}")
+
+    with open(os.path.join(save_dir, f"epoch{epoch}.pt"), "wb") as fl:
+        torch.save(model, fl)
 
 
 def trainer(args):
@@ -84,6 +84,13 @@ def trainer(args):
     else:
         device = torch.device("cpu")
 
+    save_dir = args.save_dir.strip()
+
+    if save_dir == "":
+        save_dir = "checkpoint"
+
+    os.makedirs(save_dir, exist_ok=True)
+
     valid_data, vocab_info = prepare_dataloader(
         args.data,
         args.src_lang,
@@ -96,9 +103,7 @@ def trainer(args):
 
     with open(args.model_config, "r", encoding="utf-8") as model_config:
         model_dict = yaml.load(model_config, Loader=Loader)
-        model = Transformer(
-            vocab_info.vocab_size, vocab_info.padding_idx, **model_dict
-        ).to(device)
+        model = Transformer(vocab_info, **model_dict).to(device)
 
     train_data, _ = prepare_dataloader(
         args.data,
@@ -118,10 +123,8 @@ def trainer(args):
     )
     criteration = CrossEntropyWithLabelSmoothing(args.label_smoothing_eps)
 
-    for _ in range(args.epoch):
-        train(model, criteration, train_data, optim, scheduler, device)
-
-        valid(model, criteration, valid_data, device)
+    for epoch in range(args.epoch):
+        train(epoch, model, criteration, train_data, optim, scheduler, save_dir, device)
 
 
 if __name__ == "__main__":

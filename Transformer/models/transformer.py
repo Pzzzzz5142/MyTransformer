@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from Transformer.modules import MultiHeadAttention, TransformerLayer
+from Transformer.modules import TransformerLayer
+from Transformer.data import WordDict
 from typing import Optional
 import math
 
@@ -68,8 +69,7 @@ class TransformerDecoder(nn.Module):
 class Transformer(nn.Module):
     def __init__(
         self,
-        vocab_size,
-        padding_idx,
+        vocab_info: WordDict,
         model_dim,
         ffn_dim,
         head_num,
@@ -79,9 +79,12 @@ class Transformer(nn.Module):
     ):
         super().__init__()
 
-        self.padding_idx = padding_idx
+        self.padding_idx = vocab_info.padding_idx
         self.share_embeddings = share_embeddings
         self.model_dim = model_dim
+        self.vocab_info = vocab_info
+
+        vocab_size = vocab_info.vocab_size
 
         if share_embeddings:
             self.embedding = nn.Embedding(
@@ -102,7 +105,7 @@ class Transformer(nn.Module):
             model_dim, vocab_size if isinstance(vocab_size, int) else vocab_size[1]
         )
 
-    def forward(self, input_tokens, output_tokens):
+    def forward(self, input_tokens, output_tokens) -> torch.Tensor:
 
         en_padding_mask = input_tokens == self.padding_idx
 
@@ -153,4 +156,62 @@ class Transformer(nn.Module):
         pos = x.new_tensor(pos)
 
         return pos
+
+    @torch.no_grad()
+    def inference(self, source, beam_size=5):
+        source = self.vocab_info.tokenize([source])
+
+        source = torch.tensor(source)  # 1 x L
+
+        net_output = torch.tensor([[self.vocab_info.bos_idx]])  # 1 x 1
+
+        predict = self.forward(source, net_output)  #  1 x 1 x vocab_size
+        predict = -predict.log_softmax(-1)
+
+        predict_prob, predict_tokens = predict.topk(
+            beam_size, -1, largest=False
+        )  # 1 x 1 x beam_size
+
+        net_output = torch.cat(
+            [net_output.expand((beam_size, 1), predict_tokens.view(beam_size, 1))],
+            dim=-1,
+        )  # beam_size x 2
+        total_prob = predict_prob.view(-1)
+
+        while True:
+            predict = self.forward(source, net_output)[:, -1, :].reshape(beam_size, -1)
+            predict = -predict.log_softmax(-1)  # beam_size x vocab_size
+
+            predict_prob, predict_tokens = predict.topk(
+                beam_size, -1, largest=False
+            )  # beam_size x beam_size
+
+            net_output = (
+                net_output.unsqueeze(1)
+                .expand((beam_size, beam_size, net_output.shape[-1]))
+                .reshape(beam_size * beam_size, -1)
+            )  # beam_size*beam_size x L
+            total_prob = (
+                total_prob.unsqueeze(1).expand((beam_size, beam_size)).reshape(-1)
+            )  # beam_size*beam_size
+            predict_tokens = predict_tokens.view(beam_size * beam_size, 1)
+            predict_prob = predict_prob.view(beam_size * beam_size, 1)
+
+            net_output = torch.cat(
+                [net_output, predict_tokens], dim=-1
+            )  # beam_size*beam_size x L+1
+            total_prob = total_prob + predict_prob  # beam_size*beam_size
+
+            _, net_output_topk = total_prob.topk(
+                beam_size, dim=-1, largest=False
+            )  # beam_size
+
+            net_output = net_output.index_select(0, net_output_topk)  # beam_size x L+1
+            sentences = self.vocab_info.detokenize(net_output)
+            print("\n".join(sentences))
+
+            for sentence in sentences:
+                last_token = sentence.split()[-1]
+                if last_token == self.vocab_info.word2idx(self.vocab_info.eos_idx):
+                    return sentence
 
