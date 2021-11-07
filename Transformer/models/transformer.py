@@ -158,9 +158,20 @@ class Transformer(nn.Module):
         return pos
 
     @torch.no_grad()
-    def inference(self, source, beam_size=5, device: torch.device = ...):
+    def inference(self, source, target=None, beam_size=5, device: torch.device = ...):
         source = self.vocab_info.tokenize(source)
         source = [self.vocab_info.bos_idx] + source + [self.vocab_info.eos_idx]
+
+        if target != None:
+            target = self.vocab_info.tokenize(target)
+            target = [self.vocab_info.bos_idx] + target[:5]
+            source = torch.tensor(source).unsqueeze(0).to(device)
+            target = torch.tensor(target).unsqueeze(0).to(device)
+            predict = self.forward(source, target)
+            predict = -predict.log_softmax(-1)
+            _, predict_tokens = predict.topk(1, -1, largest=False)
+            predict_tokens = predict_tokens.view(1, -1)
+            return
 
         source = torch.tensor(source).unsqueeze(0).to(device)  # 1 x L
 

@@ -21,8 +21,8 @@ def solve(args):
         model: Transformer = torch.load(fl, map_location=device)
         vocab_info = model.vocab_info
 
-    with open(os.path.join(args.test_path, f"test.{args.src_lang}"), "rb") as src, open(
-        os.path.join(args.test_path, f"test.{args.tgt_lang}"), "rb"
+    with open(os.path.join(args.test_path, f"train.{args.src_lang}"), "rb") as src, open(
+        os.path.join(args.test_path, f"train.{args.tgt_lang}"), "rb"
     ) as tgt:
         src_data = pickle.load(src)
         tgt_data = pickle.load(tgt)
@@ -31,7 +31,7 @@ def solve(args):
         src_sent = vocab_info.detokenize(src_sent)
         tgt_sent = vocab_info.detokenize(tgt_sent)
 
-        predict_sent = model.inference(src_sent, device=device)
+        predict_sent = model.inference(src_sent,tgt_sent, device=device)
 
         print(f"Source:\n{src_sent}\nTarget:\n{tgt_sent}\nPredict:\n{predict_sent}\n")
 
