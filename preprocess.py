@@ -8,8 +8,8 @@ import pickle
 def init_options(parser: ArgumentParser):
 
     parser.add_argument("--data-path", required=True)
-    parser.add_argument("--target-lang", required=True)
-    parser.add_argument("--source-lang", required=True)
+    parser.add_argument("--src-lang", required=True)
+    parser.add_argument("--tgt-lang", required=True)
     parser.add_argument("--dist-dir", default="data-bin")
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--vocab-name", default="bpevocab")

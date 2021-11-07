@@ -158,12 +158,13 @@ class Transformer(nn.Module):
         return pos
 
     @torch.no_grad()
-    def inference(self, source, beam_size=5):
-        source = self.vocab_info.tokenize([source])
+    def inference(self, source, beam_size=5, device: torch.device = ...):
+        source = self.vocab_info.tokenize(source)
+        source = [self.vocab_info.bos_idx] + source + [self.vocab_info.eos_idx]
 
-        source = torch.tensor(source)  # 1 x L
+        source = torch.tensor(source).unsqueeze(0).to(device)  # 1 x L
 
-        net_output = torch.tensor([[self.vocab_info.bos_idx]])  # 1 x 1
+        net_output = torch.tensor([[self.vocab_info.bos_idx]]).to(device)  # 1 x 1
 
         predict = self.forward(source, net_output)  #  1 x 1 x vocab_size
         predict = -predict.log_softmax(-1)
@@ -173,10 +174,11 @@ class Transformer(nn.Module):
         )  # 1 x 1 x beam_size
 
         net_output = torch.cat(
-            [net_output.expand((beam_size, 1), predict_tokens.view(beam_size, 1))],
+            [net_output.expand((beam_size, 1)), predict_tokens.view(beam_size, 1)],
             dim=-1,
         )  # beam_size x 2
         total_prob = predict_prob.view(-1)
+        source = source.expand((beam_size, -1))
 
         while True:
             predict = self.forward(source, net_output)[:, -1, :].reshape(beam_size, -1)
@@ -195,7 +197,7 @@ class Transformer(nn.Module):
                 total_prob.unsqueeze(1).expand((beam_size, beam_size)).reshape(-1)
             )  # beam_size*beam_size
             predict_tokens = predict_tokens.view(beam_size * beam_size, 1)
-            predict_prob = predict_prob.view(beam_size * beam_size, 1)
+            predict_prob = predict_prob.view(-1)
 
             net_output = torch.cat(
                 [net_output, predict_tokens], dim=-1
@@ -207,11 +209,12 @@ class Transformer(nn.Module):
             )  # beam_size
 
             net_output = net_output.index_select(0, net_output_topk)  # beam_size x L+1
+            total_prob = total_prob.index_select(0, net_output_topk)
             sentences = self.vocab_info.detokenize(net_output)
             print("\n".join(sentences))
 
             for sentence in sentences:
                 last_token = sentence.split()[-1]
-                if last_token == self.vocab_info.word2idx(self.vocab_info.eos_idx):
+                if last_token == self.vocab_info.idx2word(self.vocab_info.eos_idx):
                     return sentence
 

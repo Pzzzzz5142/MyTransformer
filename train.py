@@ -1,17 +1,20 @@
-from torch import nn
-import torch
-from torch.optim.optimizer import Optimizer
-from torch.optim.lr_scheduler import _LRScheduler
-from torch.utils.data.dataloader import DataLoader
-from Transformer.models import Transformer
-from Transformer.data import prepare_dataloader, PinMemoryBatch
-from Transformer.criteration import CrossEntropyWithLabelSmoothing
+import os
 from argparse import ArgumentParser
+
+import torch
+import yaml
+from torch import nn
 from torch.optim import AdamW
-from Transformer.handle import TransformerLrScheduler
-import yaml, os
-from yaml import Loader
+from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.optimizer import Optimizer
+from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
+from yaml import Loader
+
+from Transformer.criteration import CrossEntropyWithLabelSmoothing
+from Transformer.data import prepare_dataloader
+from Transformer.handle import TransformerLrScheduler, handle_device
+from Transformer.models import Transformer
 
 
 def init_option(parser: ArgumentParser):
@@ -75,14 +78,7 @@ def train(
 
 def trainer(args):
 
-    if args.device == "cuda":
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-        else:
-            UserWarning("No Cuda detected. Running on cpu.")
-            device = torch.device("cpu")
-    else:
-        device = torch.device("cpu")
+    device = handle_device(args)
 
     save_dir = args.save_dir.strip()
 
@@ -124,7 +120,17 @@ def trainer(args):
     criteration = CrossEntropyWithLabelSmoothing(args.label_smoothing_eps)
 
     for epoch in range(args.epoch):
-        train(epoch, model, criteration, train_data, optim, scheduler, save_dir, device)
+        train(
+            epoch,
+            model,
+            criteration,
+            train_data,
+            valid_data,
+            optim,
+            scheduler,
+            save_dir,
+            device,
+        )
 
 
 if __name__ == "__main__":

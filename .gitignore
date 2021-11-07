@@ -131,3 +131,4 @@ dmypy.json
 data-bin/*
 test_case.py
 .vscode/*
+*.pt

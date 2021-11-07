@@ -31,10 +31,24 @@ class WordDict(object):
     def word2idx(self, word: str):
         return self.word_dict[word]
 
-    def tokenize(self, sentence):
-        sentence = sentence.strip().split()
+    def tokenize(self, sentence: str):
+        sentence = [self.word_dict[word] for word in sentence.strip().split()]
+        return sentence
 
     def detokenize(self, tensor: torch.Tensor):
-        sentence = [" ".join(sent) for sent in tensor.cpu().tolist()]
+        if isinstance(tensor, torch.Tensor):
+            if len(tensor.shape) == 2:
+                sentence = [
+                    " ".join([self.idx_dict[idx] for idx in sent])
+                    for sent in tensor.cpu().tolist()
+                ]
+            elif len(tensor.shape) == 1:
+                sentence = " ".join(
+                    [self.idx_dict[idx] for idx in tensor.cpu().tolist()]
+                )
+            else:
+                raise Exception()
+        else:
+            sentence = " ".join([self.idx_dict[idx] for idx in tensor])
 
         return sentence
