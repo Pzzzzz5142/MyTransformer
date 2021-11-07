@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 import os
 import torch
-from Transformer.handle import handle_device
+from Transformer.handle import handle_device, remove_bpe, bpe_it
 from Transformer.models import Transformer
 import pickle
 
@@ -21,19 +21,22 @@ def solve(args):
         model: Transformer = torch.load(fl, map_location=device)
         vocab_info = model.vocab_info
 
-    with open(os.path.join(args.data, f"train.{args.src_lang}"), "rb") as src, open(
-        os.path.join(args.data, f"train.{args.tgt_lang}"), "rb"
+    with open(os.path.join(args.data, f"test.{args.src_lang}"), "rb") as src, open(
+        os.path.join(args.data, f"test.{args.tgt_lang}"), "rb"
     ) as tgt:
         src_data = pickle.load(src)
         tgt_data = pickle.load(tgt)
 
     for src_sent, tgt_sent in zip(src_data, tgt_data):
         src_sent = vocab_info.detokenize(src_sent)
-        tgt_sent = vocab_info.detokenize(tgt_sent)
 
         predict_sent = model.inference(src_sent, device=device)
 
-        print(f"Source:\n{src_sent}\nTarget:\n{tgt_sent}\nPredict:\n{predict_sent}\n")
+        print(
+            f"Source:\n{remove_bpe(src_sent)}\nTarget:\n{' '.join(tgt_sent)}\nPredict:\n{remove_bpe(predict_sent)}\n"
+        )
+
+        continue
 
 
 if __name__ == "__main__":

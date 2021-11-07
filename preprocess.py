@@ -16,7 +16,7 @@ def init_options(parser: ArgumentParser):
     parser.add_argument("--lines-per-thread", type=int, default=1000)
 
 
-def handle_data_single_worker(src_lines, tgt_lines, word2ind):
+def handle_data_single_worker(src_lines, tgt_lines, word2ind, is_test):
     src_res = []
     tgt_res = []
 
@@ -27,12 +27,15 @@ def handle_data_single_worker(src_lines, tgt_lines, word2ind):
                 for i in src_line.strip().split(" ")
             ]
         )
-        tgt_res.append(
-            [
-                word2ind[i] if i in word2ind else word2ind["<unk>"]
-                for i in tgt_line.strip().split(" ")
-            ]
-        )
+        if is_test:
+            tgt_res.append([i for i in tgt_line.strip().split(" ")])
+        else:
+            tgt_res.append(
+                [
+                    word2ind[i] if i in word2ind else word2ind["<unk>"]
+                    for i in tgt_line.strip().split(" ")
+                ]
+            )
 
     return src_res, tgt_res
 
@@ -63,9 +66,9 @@ def solve(args):
     for split in ["test", "train", "valid"]:
         pool = Pool(args.workers)
         with open(
-            path.join(root_dir, f"{split}.{args.source_lang}"), "r", encoding="utf-8"
+            path.join(root_dir, f"{split}.{args.src_lang}"), "r", encoding="utf-8"
         ) as src, open(
-            path.join(root_dir, f"{split}.{args.target_lang}"), "r", encoding="utf-8"
+            path.join(root_dir, f"{split}.{args.tgt_lang}"), "r", encoding="utf-8"
         ) as tgt:
 
             src_res = []
@@ -81,7 +84,8 @@ def solve(args):
                 if ind > 0 and ind % args.lines_per_thread == 0:
                     result.append(
                         pool.apply_async(
-                            handle_data_single_worker, (src_lines, tgt_lines, word2ind),
+                            handle_data_single_worker,
+                            (src_lines, tgt_lines, word2ind, split == "test"),
                         )
                     )
                     src_lines = []
@@ -93,7 +97,8 @@ def solve(args):
             if len(src_lines):
                 result.append(
                     pool.apply_async(
-                        handle_data_single_worker, (src_lines, tgt_lines, word2ind),
+                        handle_data_single_worker,
+                        (src_lines, tgt_lines, word2ind, split == "test"),
                     )
                 )
 
@@ -106,8 +111,8 @@ def solve(args):
                 tgt_res += res[1]
 
         with open(
-            path.join(dist_dir, f"{split}.{args.source_lang}"), "wb"
-        ) as src, open(path.join(dist_dir, f"{split}.{args.target_lang}"), "wb") as tgt:
+            path.join(dist_dir, f"{split}.{args.src_lang}"), "wb"
+        ) as src, open(path.join(dist_dir, f"{split}.{args.tgt_lang}"), "wb") as tgt:
             pickle.dump(src_res, src)
             pickle.dump(tgt_res, tgt)
 

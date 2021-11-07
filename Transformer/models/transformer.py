@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from Transformer.modules import TransformerLayer
 from Transformer.data import WordDict
+from Transformer.handle import remove_bpe
 from typing import Optional
 import math
 
@@ -222,6 +223,7 @@ class Transformer(nn.Module):
             net_output = net_output.index_select(0, net_output_topk)  # beam_size x L+1
             total_prob = total_prob.index_select(0, net_output_topk)
             sentences = self.vocab_info.detokenize(net_output)
+            print("\n".join([(remove_bpe(sent)) for sent in sentences]))
 
             for sentence in sentences:
                 last_token = sentence.split()[-1]

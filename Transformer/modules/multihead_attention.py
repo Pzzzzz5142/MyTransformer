@@ -87,7 +87,7 @@ class MultiHeadAttention(nn.Module):
                 .expand((-1, self.head_num, -1, -1))
                 .reshape(-1, L, L1)
             )
-            attn_weights = attn_weights.masked_fill(padding_mask, float("-inf"))
+            attn_weights = attn_weights.masked_fill(padding_mask, -1e9)
 
         attn_weights = attn_weights.softmax(-1)
 
