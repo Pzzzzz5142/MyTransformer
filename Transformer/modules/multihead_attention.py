@@ -79,9 +79,9 @@ class MultiHeadAttention(nn.Module):
             if prev_input_padding_mask != None:
                 padding_mask = prev_input_padding_mask.unsqueeze(
                     1
-                ) * padding_mask.unsqueeze(2)
+                ) + padding_mask.unsqueeze(2)
             else:
-                padding_mask = padding_mask.unsqueeze(1) * padding_mask.unsqueeze(2)
+                padding_mask = padding_mask.unsqueeze(1) + padding_mask.unsqueeze(2)
             padding_mask = (
                 padding_mask.unsqueeze(1)
                 .expand((-1, self.head_num, -1, -1))
