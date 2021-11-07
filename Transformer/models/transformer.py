@@ -222,7 +222,6 @@ class Transformer(nn.Module):
             net_output = net_output.index_select(0, net_output_topk)  # beam_size x L+1
             total_prob = total_prob.index_select(0, net_output_topk)
             sentences = self.vocab_info.detokenize(net_output)
-            print("\n".join(sentences))
 
             for sentence in sentences:
                 last_token = sentence.split()[-1]
