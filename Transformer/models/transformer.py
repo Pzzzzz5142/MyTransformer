@@ -106,6 +106,9 @@ class Transformer(nn.Module):
             model_dim, vocab_size if isinstance(vocab_size, int) else vocab_size[1]
         )
 
+        if share_embeddings:
+            self.fc.weight = self.embedding.weight
+
     def forward(self, input_tokens, output_tokens) -> torch.Tensor:
 
         en_padding_mask = input_tokens == self.padding_idx
