@@ -99,6 +99,7 @@ class Transformer(nn.Module):
                 vocab_size[1], model_dim, padding_idx=self.padding_idx
             )
 
+        self.dropout=nn.Dropout(0.1)
         self.encoder = TransformerEncoder(model_dim, ffn_dim, head_num, encoder_layers)
         self.decoder = TransformerDecoder(model_dim, ffn_dim, head_num, decoder_layers)
 
@@ -123,6 +124,7 @@ class Transformer(nn.Module):
         pos = self.__generate_pos_matrix(x)
         x = x + pos  # add position embedding
         # x = x * math.sqrt(self.model_dim)
+        x=self.dropout(x)
 
         encoder_out = self.encoder(x, en_padding_mask)
 
@@ -136,6 +138,7 @@ class Transformer(nn.Module):
         pos = self.__generate_pos_matrix(x)
         x = x + pos
         # x = x * math.sqrt(self.model_dim)
+        x=self.dropout(x)
 
         decoder_out = self.decoder(
             x,

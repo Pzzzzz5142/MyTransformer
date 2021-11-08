@@ -9,7 +9,7 @@ class TransformerLayer(nn.Module):
     def __init__(self, head_num, model_dim, ffn_dim, drop_out=0.1, post_norm=True):
         super().__init__()
 
-        self.drop_out = drop_out
+        self.drop_out = nn.Dropout(drop_out)
 
         self.attn = MultiHeadAttention(head_num, model_dim)
 
@@ -44,7 +44,7 @@ class TransformerLayer(nn.Module):
         x = F.relu(x)
         x = self.fc2(x)
 
-        x = F.dropout(x, self.drop_out)
+        x = self.drop_out(x)
         x = x + mha_res
         x = F.layer_norm(x, (x.shape[-1],))
 

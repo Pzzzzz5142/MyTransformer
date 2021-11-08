@@ -14,7 +14,7 @@ class MultiHeadAttention(nn.Module):
         assert key_dim * head_num == model_dim
 
         self.scale = 1 / math.sqrt(key_dim)
-        self.drop_out = drop_out
+        self.drop_out = nn.Dropout(drop_out)
 
         self.head_num = head_num
         self.model_dim = model_dim
@@ -98,7 +98,7 @@ class MultiHeadAttention(nn.Module):
 
         res = self.fc(res)
 
-        res = F.dropout(res, self.drop_out)
+        res = self.drop_out(res)
         res = res + net_input
         res = res.transpose(0, 1)
         res = F.layer_norm(res, (res.shape[-1],))
