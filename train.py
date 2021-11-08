@@ -51,16 +51,20 @@ def train(
     save_dir: str,
     device: torch.device,
 ):
+    total_loss = 0
+    total_sample = 0
     for ind, samples in enumerate(tqdm(train_data)):  # Training
         samples = samples.to(device).get_batch()
         optim.zero_grad()
         loss, sample_size = criteration(model, **samples)
         loss.backward()
+        total_loss += float(loss)
+        total_sample += int(sample_size)
         optim.step()
         scheduler.step()
 
         if ind % 100 == 0:
-            print(f"Training loss: {float(loss) / sample_size}")
+            print(f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample}")
 
     with torch.no_grad():  # Validating
         total_loss = 0
@@ -70,7 +74,7 @@ def train(
             loss, sample_size = criteration(model, **samples)
             total_loss += loss
             total_sample += sample_size
-        print(f"Valid loss: {float(total_loss / total_sample)}")
+        print(f"Epoch: {epoch} Valid loss: {float(total_loss / total_sample)}")
 
     with open(os.path.join(save_dir, f"epoch{epoch}.pt"), "wb") as fl:
         torch.save(model, fl)
