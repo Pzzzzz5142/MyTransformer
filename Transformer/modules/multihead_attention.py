@@ -27,6 +27,11 @@ class MultiHeadAttention(nn.Module):
         self.k_proj = nn.Linear(model_dim, model_dim)
         self.v_proj = nn.Linear(model_dim, model_dim)
 
+        nn.init.xavier_uniform_(self.q_proj.weight)
+        nn.init.xavier_uniform_(self.k_proj.weight)
+        nn.init.xavier_uniform_(self.v_proj.weight)
+        nn.init.xavier_uniform_(self.fc.weight)
+
     def forward(
         self,
         net_input: torch.Tensor,
