@@ -15,6 +15,7 @@ class MultiHeadAttention(nn.Module):
 
         self.scale = 1 / math.sqrt(key_dim)
         self.drop_out = nn.Dropout(drop_out)
+        self.layer_norm = nn.LayerNorm(model_dim)
 
         self.head_num = head_num
         self.model_dim = model_dim
@@ -101,7 +102,7 @@ class MultiHeadAttention(nn.Module):
         res = self.drop_out(res)
         res = res + net_input
         res = res.transpose(0, 1)
-        res = F.layer_norm(res, (res.shape[-1],))
+        res = self.layer_norm(res)
 
         return res, attn_weights
 
