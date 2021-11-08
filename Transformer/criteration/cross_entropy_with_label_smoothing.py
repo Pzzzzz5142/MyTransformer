@@ -20,8 +20,8 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
         ]
         target = target[target != padding_idx]
 
-        false_weight = self.eps / (net_output.shape[-1] - 1)
-        true_weight = 1 - self.eps - false_weight
+        false_weight = self.eps / net_output.shape[-1]
+        true_weight = 1 - self.eps
 
         true_loss = -log_prob.gather(-1, target.unsqueeze(1)).squeeze(-1)
         false_loss = -log_prob.sum(-1)

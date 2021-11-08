@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import torch
 import yaml
 from torch import nn
-from torch.optim import AdamW
+from torch.optim import AdamW,Adam
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
@@ -133,7 +133,7 @@ def trainer(args):
 
     print(model)
 
-    optim = AdamW(model.parameters(), betas=args.adam_betas, eps=args.adam_eps)
+    optim = Adam(model.parameters(), betas=args.adam_betas, eps=args.adam_eps)
     scheduler = TransformerLrScheduler(
         optim, model_dict["model_dim"], args.warmup_steps
     )
