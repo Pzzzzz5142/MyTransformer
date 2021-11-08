@@ -120,6 +120,7 @@ class Transformer(nn.Module):
             x = self.embedding(input_tokens)
         else:
             x = self.encoder_emb(input_tokens)
+        x = x * math.sqrt(self.model_dim)
 
         pos = self.__generate_pos_matrix(x)
         x = x + pos  # add position embedding
@@ -134,6 +135,7 @@ class Transformer(nn.Module):
             x = self.embedding(output_tokens)
         else:
             x = self.decoder_emb(output_tokens)
+        x = x * math.sqrt(self.model_dim)
 
         pos = self.__generate_pos_matrix(x)
         x = x + pos
@@ -147,7 +149,7 @@ class Transformer(nn.Module):
             prev_input_padding_mask=en_padding_mask,
         )
 
-        predict = self.fc(decoder_out) / math.sqrt(self.model_dim)
+        predict = self.fc(decoder_out)
 
         return predict
 
