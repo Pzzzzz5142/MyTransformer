@@ -4,18 +4,19 @@
 
 ## 已实现部分
 
-+ 大量的 BUG。（Valid ppl 13+）
++ 大量的 BUG。（best valid ppl 13+）
 + Data preprocessing
 + DataLoading
+    + Memory Pinning [reference](https://pytorch.org/docs/stable/data.html#memory-pinning)
+
 + Transformer 模型
     + LayerNorm [reference](https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html?highlight=layer#torch.nn.LayerNorm)
 + Label smooth cross entropy
     + Ignore padding index [reference](https://discuss.pytorch.org/t/ignore-index-in-the-cross-entropy-loss/25006/9)
-
 + Training 部分
 + Inference 部分（写了一个比较 low 的 beam search）
 
-## Usage
+## Usage（其实并不能用）
 
 预处理数据。数据在[这里](https://git.io/JPK9N)下载。
 
