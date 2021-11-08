@@ -78,17 +78,15 @@ class MultiHeadAttention(nn.Module):
 
         if padding_mask != None:
             if prev_input_padding_mask != None:
-                padding_mask = prev_input_padding_mask.unsqueeze(
-                    1
-                ) + padding_mask.unsqueeze(2)
+                padding_mask = prev_input_padding_mask.unsqueeze(1).expand((-1, L, -1))
             else:
-                padding_mask = padding_mask.unsqueeze(1) + padding_mask.unsqueeze(2)
+                padding_mask = padding_mask.unsqueeze(1).expand((-1, L, -1))
             padding_mask = (
                 padding_mask.unsqueeze(1)
                 .expand((-1, self.head_num, -1, -1))
                 .reshape(-1, L, L1)
             )
-            attn_weights = attn_weights.masked_fill(padding_mask, -1e9)
+            attn_weights = attn_weights.masked_fill(padding_mask, float("-inf"))
 
         attn_weights = attn_weights.softmax(-1)
 
