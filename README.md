@@ -4,7 +4,7 @@
 
 ## 已实现部分
 
-+ 大量的 BUG。
++ 大量的 BUG。（Valid ppl 13+）
 
 + Data preprocessing
 

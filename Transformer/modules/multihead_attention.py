@@ -101,7 +101,7 @@ class MultiHeadAttention(nn.Module):
         res = F.dropout(res, self.drop_out)
         res = res + net_input
         res = res.transpose(0, 1)
-        res = F.layer_norm(res, (res.shape[-1],))
+        res = F.layer_norm(res, res.shape[-2:])
 
         return res, attn_weights
 

@@ -46,7 +46,7 @@ class TransformerLayer(nn.Module):
 
         x = F.dropout(x, self.drop_out)
         x = x + mha_res
-        x = F.layer_norm(x, (x.shape[-1],))
+        x = F.layer_norm(x, x.shape[-2:])
 
         return x, attn_weight
 
