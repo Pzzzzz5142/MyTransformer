@@ -108,6 +108,8 @@ class Transformer(nn.Module):
 
         if share_embeddings:
             self.fc.weight = self.embedding.weight
+        else:
+            self.fc.weight = self.decoder_emb.weight
 
     def forward(self, input_tokens, output_tokens) -> torch.Tensor:
 
@@ -117,10 +119,10 @@ class Transformer(nn.Module):
             x = self.embedding(input_tokens)
         else:
             x = self.encoder_emb(input_tokens)
-        x = x * math.sqrt(self.model_dim)
 
         pos = self.__generate_pos_matrix(x)
         x = x + pos  # add position embedding
+        # x = x * math.sqrt(self.model_dim)
 
         encoder_out = self.encoder(x, en_padding_mask)
 
@@ -130,10 +132,10 @@ class Transformer(nn.Module):
             x = self.embedding(output_tokens)
         else:
             x = self.decoder_emb(output_tokens)
-        x = x * math.sqrt(self.model_dim)
 
         pos = self.__generate_pos_matrix(x)
         x = x + pos
+        # x = x * math.sqrt(self.model_dim)
 
         decoder_out = self.decoder(
             x,
@@ -142,7 +144,7 @@ class Transformer(nn.Module):
             prev_input_padding_mask=en_padding_mask,
         )
 
-        predict = self.fc(decoder_out)
+        predict = self.fc(decoder_out) / math.sqrt(self.model_dim)
 
         return predict
 

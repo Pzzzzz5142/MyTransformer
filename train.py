@@ -28,6 +28,7 @@ def init_option(parser: ArgumentParser):
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--epoch", default=3, type=int)
     parser.add_argument("--save-dir", default="")
+    parser.add_argument("--update-freq", type=int, default=1)
 
     # data settings
     parser.add_argument("--data", required=True)
@@ -42,6 +43,7 @@ def init_option(parser: ArgumentParser):
 
 def train(
     epoch: int,
+    update_freq: int,
     model: nn.Module,
     criteration: nn.Module,
     train_data: DataLoader,
@@ -53,22 +55,36 @@ def train(
 ):
     total_loss = 0
     total_sample = 0
+    update_loss = 0
+    optim.zero_grad()
+    model.train()
     for ind, samples in enumerate(tqdm(train_data)):  # Training
         samples = samples.to(device).get_batch()
-        optim.zero_grad()
+        ind = ind + 1
         loss, sample_size = criteration(model, **samples)
-        loss.backward()
+        update_loss = update_loss + loss
+        if ind % update_freq == 0:
+            update_loss.backward()
+            optim.step()
+            scheduler.step()
+            optim.zero_grad()
+            update_loss = 0
         total_loss += float(loss)
         total_sample += int(sample_size)
+
+        if (ind // update_freq) % 100 == 0:
+            print(
+                f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample} lr: {float(optim.param_groups[0]['lr'])}"
+            )
+    if update_loss != 0:
+        update_loss.backward()
         optim.step()
         scheduler.step()
-
-        if ind % 100 == 0:
-            print(f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample}")
 
     with torch.no_grad():  # Validating
         total_loss = 0
         total_sample = 0
+        model.eval()
         for samples in tqdm(valid_data):
             samples = samples.to(device).get_batch()
             loss, sample_size = criteration(model, **samples)
@@ -126,6 +142,7 @@ def trainer(args):
     for epoch in range(args.epoch):
         train(
             epoch,
+            args.update_freq,
             model,
             criteration,
             train_data,
