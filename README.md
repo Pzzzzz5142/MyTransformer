@@ -5,17 +5,14 @@
 ## 已实现部分
 
 + 大量的 BUG。（Valid ppl 13+）
-
 + Data preprocessing
-
 + DataLoading
-
 + Transformer 模型
-
+    + LayerNorm [reference](https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html?highlight=layer#torch.nn.LayerNorm)
 + Label smooth cross entropy
+    + Ignore padding index [reference](https://discuss.pytorch.org/t/ignore-index-in-the-cross-entropy-loss/25006/9)
 
 + Training 部分
-
 + Inference 部分（写了一个比较 low 的 beam search）
 
 ## Usage
