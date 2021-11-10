@@ -6,11 +6,13 @@ from Transformer.handle import remove_bpe
 from typing import Optional
 import math
 
+
 def Embedding(num_embeddings, embedding_dim, padding_idx):
     m = nn.Embedding(num_embeddings, embedding_dim, padding_idx=padding_idx)
     nn.init.normal_(m.weight, mean=0, std=embedding_dim ** -0.5)
     nn.init.constant_(m.weight[padding_idx], 0)
     return m
+
 
 class TransformerEncoder(nn.Module):
     def __init__(self, model_dim, ffn_dim, head_num, encoder_layers):
@@ -104,7 +106,7 @@ class Transformer(nn.Module):
                 vocab_size[1], model_dim, padding_idx=self.padding_idx
             )
 
-        self.dropout=nn.Dropout(0.1)
+        self.dropout = nn.Dropout(0.1)
         self.encoder = TransformerEncoder(model_dim, ffn_dim, head_num, encoder_layers)
         self.decoder = TransformerDecoder(model_dim, ffn_dim, head_num, decoder_layers)
 
@@ -130,7 +132,7 @@ class Transformer(nn.Module):
         pos = self.__generate_pos_matrix(x)
         x = x + pos  # add position embedding
         # x = x * math.sqrt(self.model_dim)
-        x=self.dropout(x)
+        x = self.dropout(x)
 
         encoder_out = self.encoder(x, en_padding_mask)
 
@@ -145,7 +147,7 @@ class Transformer(nn.Module):
         pos = self.__generate_pos_matrix(x)
         x = x + pos
         # x = x * math.sqrt(self.model_dim)
-        x=self.dropout(x)
+        x = self.dropout(x)
 
         decoder_out = self.decoder(
             x,
@@ -161,9 +163,9 @@ class Transformer(nn.Module):
     def __generate_pos_matrix(self, x: torch.Tensor):
         pos = [
             [
-                math.cos(pos / (10000 ** (2 * i / self.model_dim)))
+                math.cos(pos / (10000 ** ((i - 1) / self.model_dim)))
                 if i & 1
-                else math.sin(pos / (10000 ** (2 * i / self.model_dim)))
+                else math.sin(pos / (10000 ** (i / self.model_dim)))
                 for i in range(x.shape[-1])
             ]
             for pos in range(x.shape[-2])
