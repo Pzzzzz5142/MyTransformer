@@ -1,3 +1,4 @@
+from copy import deepcopy
 import numpy as np
 from numpy.core.fromnumeric import argsort
 import torch
@@ -49,7 +50,6 @@ def collate_fn(samples: list):  # form samples into batches
     input_tokens = []
     output_tokens = []
     target = []
-    samples.pop()
     for sample in samples:
         ind.append(sample["id"])
         data = sample["data"]
@@ -107,6 +107,9 @@ def batch_by_size(
             or max(max_seq_len, max(sent_lens[sent_ind[ind]])) * (len(batch) + 1)
             > max_tokens
         ):
+            if len(batch) == 0:
+                ind += 1
+                continue
             batches.append(batch)
             if ind == len(sent_lens):
                 break
@@ -168,10 +171,12 @@ class LanguagePairIterableDataset(IterableDataset):
         self.dataset = dataset
         self.batch_sampler = batch_sampler
 
-    def __iter__(self) -> Iterator[T_co]:
+        self.padding()
+
+    def padding(self):
         batch_sampler = []
         for batch in self.batch_sampler:
-            sampler = [batch[i] for i in RandomSampler(batch)]
+            sampler = batch
             batch = []
             max_tgt_len = 0
             max_src_len = 0
@@ -180,7 +185,7 @@ class LanguagePairIterableDataset(IterableDataset):
                 max_src_len = max(max_src_len, len(data["data"]["src_lang"]))
                 max_tgt_len = max(max_tgt_len, len(data["data"]["tgt_lang"]))
             for sample in sampler:
-                data = self.dataset[sample]
+                data = deepcopy(self.dataset[sample])
                 data["data"]["src_lang"] = [
                     self.dataset.src.word_dict.padding_idx
                     for _ in range(max_src_len - len(data["data"]["src_lang"]))
@@ -195,6 +200,12 @@ class LanguagePairIterableDataset(IterableDataset):
                 ]
                 batch.append(data)
             batch_sampler.append(batch)
+        self.batch_sampler = batch_sampler
+
+    def __iter__(self) -> Iterator[T_co]:
+        batch_sampler = []
+        for batch in self.batch_sampler:
+            batch_sampler.append([batch[i] for i in RandomSampler(batch)])
         sample_ind = RandomSampler(batch_sampler)
         for ind in sample_ind:
             yield batch_sampler[ind]
@@ -205,7 +216,7 @@ class LanguagePairIterableDataset(IterableDataset):
 
 def prepare_language_pair_dataset(data_path, src_lang, tgt_lang, split):
 
-    src = prepare_monolingual_dataset(data_path, src_lang, split, target="present")
+    src = prepare_monolingual_dataset(data_path, src_lang, split, target="none")
     tgt = prepare_monolingual_dataset(data_path, tgt_lang, split, target="future")
 
     return LanguagePairDataset(src, tgt)

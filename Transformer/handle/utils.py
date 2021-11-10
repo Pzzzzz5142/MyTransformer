@@ -24,7 +24,7 @@ def remove_bpe(sentence: str):
             tmp += word[:-2]
         else:
             if tmp != "":
-                ans.append(word + tmp)
+                ans.append(tmp + word)
                 tmp = ""
             else:
                 ans.append(word)

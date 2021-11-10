@@ -16,10 +16,9 @@ class TransformerLrScheduler(_LRScheduler):
         super().__init__(optimizer, last_epoch=last_epoch, verbose=verbose)
 
     def get_lr(self) -> float:
-        if self.last_epoch <= 0:
-            return [0 for _ in self.base_lrs]
+        last_epoch = self.last_epoch + 1
         return [
             self.model_size ** -0.5
-            * min(self.last_epoch ** -0.5, self.last_epoch * self.warmup_step ** -1.5)
+            * min(last_epoch ** -0.5, last_epoch * self.warmup_step ** -1.5)
             for _ in self.base_lrs
         ]
