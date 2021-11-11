@@ -73,9 +73,7 @@ class TransformerEncoderLayer(nn.Module):
         prev_input: Optional[torch.Tensor] = None,
         prev_input_padding_mask: Optional[torch.Tensor] = None,
     ):
-        x, attn_weight = self.en_de_attn(
-            net_input, padding_mask, attn_mask, prev_input, prev_input_padding_mask
-        )
+        x, attn_weight = self.self_attn(net_input, padding_mask, attn_mask)
 
         res = x
         x = self.fc1(x)
