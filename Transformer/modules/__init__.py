@@ -1,2 +1,2 @@
 from .multihead_attention import MultiHeadAttention
-from .transformer_layer import TransformerLayer
+from .transformer_layer import TransformerEncoderLayer, TransformerDecoderLayer

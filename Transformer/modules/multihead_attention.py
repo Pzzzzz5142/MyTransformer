@@ -101,7 +101,6 @@ class MultiHeadAttention(nn.Module):
         res = res.reshape(L, -1, self.model_dim)
 
         res = self.fc(res)
-
         res = self.drop_out(res)
         res = res + net_input
         res = res.transpose(0, 1)

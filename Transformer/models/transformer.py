@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from Transformer.modules import TransformerLayer
+from Transformer.modules import TransformerEncoderLayer, TransformerDecoderLayer
 from Transformer.data import WordDict
 from Transformer.handle import remove_bpe
 from typing import Optional
@@ -22,7 +22,7 @@ class TransformerEncoder(nn.Module):
 
         self.layers.extend(
             [
-                TransformerLayer(head_num, model_dim, ffn_dim)
+                TransformerEncoderLayer(head_num, model_dim, ffn_dim)
                 for _ in range(encoder_layers)
             ]
         )
@@ -50,7 +50,7 @@ class TransformerDecoder(nn.Module):
 
         self.layers.extend(
             [
-                TransformerLayer(head_num, model_dim, ffn_dim)
+                TransformerDecoderLayer(head_num, model_dim, ffn_dim)
                 for _ in range(decoder_layers)
             ]
         )
@@ -131,7 +131,6 @@ class Transformer(nn.Module):
 
         pos = self.__generate_pos_matrix(x)
         x = x + pos  # add position embedding
-        # x = x * math.sqrt(self.model_dim)
         x = self.dropout(x)
 
         encoder_out = self.encoder(x, en_padding_mask)
@@ -146,7 +145,6 @@ class Transformer(nn.Module):
 
         pos = self.__generate_pos_matrix(x)
         x = x + pos
-        # x = x * math.sqrt(self.model_dim)
         x = self.dropout(x)
 
         decoder_out = self.decoder(
@@ -170,9 +168,7 @@ class Transformer(nn.Module):
             ]
             for pos in range(x.shape[-2])
         ]
-
         pos = x.new_tensor(pos)
-
         return pos
 
     @torch.no_grad()
