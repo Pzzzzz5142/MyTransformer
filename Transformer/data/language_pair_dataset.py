@@ -71,6 +71,7 @@ def batch_by_size(
         "src_padding_num": 0,
         "tgt_padding_num": 0,
         "batch_num": 0,
+        "dropped_num": 0,
     }
 
     if strategy == "shuffle":
@@ -109,6 +110,7 @@ def batch_by_size(
         ):
             if len(batch) == 0:
                 ind += 1
+                info["dropped_num"] += 1
                 continue
             batches.append(batch)
             if ind == len(sent_lens):

@@ -70,8 +70,6 @@ class TransformerEncoderLayer(nn.Module):
         net_input: torch.Tensor,
         padding_mask: torch.Tensor,
         attn_mask: Optional[torch.Tensor] = None,
-        prev_input: Optional[torch.Tensor] = None,
-        prev_input_padding_mask: Optional[torch.Tensor] = None,
     ):
         x, attn_weight = self.self_attn(net_input, padding_mask, attn_mask)
 
