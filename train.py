@@ -59,11 +59,15 @@ def train(
     total_sample = 0
     model.train()
     optim.zero_grad()
+    ppl = 0
+    training_epoch = 0
     for ind, samples in enumerate(tqdm(train_data)):  # Training
         samples = samples.to(device).get_batch()
         ind = ind + 1
         loss, logging_info = criteration(model, **samples)
         sample_size = logging_info["valid tokens num"]
+        ppl += logging_info["ppl"]
+        training_epoch += 1
         loss.backward()
         if ind % update_freq == 0:
             optim.step()
@@ -74,10 +78,12 @@ def train(
 
         if (ind // update_freq) % 100 == 0 and ind % update_freq == 0:
             print(
-                f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample} ppl: {logging_info['ppl']} lr: {float(optim.param_groups[0]['lr'])}"
+                f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample} ppl: {ppl/training_epoch} lr: {float(optim.param_groups[0]['lr'])}"
             )
             total_loss = 0
             total_sample = 0
+            ppl = 0
+            training_epoch = 0
 
     with torch.no_grad():  # Validating
         total_loss = 0
