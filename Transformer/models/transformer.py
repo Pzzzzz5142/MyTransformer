@@ -141,7 +141,7 @@ class Transformer(nn.Module):
             model_dim, vocab_size if isinstance(vocab_size, int) else vocab_size[1]
         )
 
-        nn.init.xavier_uniform(self.fc.weight)
+        nn.init.xavier_uniform_(self.fc.weight)
 
         if share_decoder_embedding:
             if share_embeddings:

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class CrossEntropyWithLabelSmoothing(nn.Module):
@@ -34,8 +33,8 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
             loss.sum(),
             {
                 "valid tokens num": int(target.shape[0]),
-                "nll_loss": float(nll_loss),
-                "ppl": 2 ** float(nll_loss),
+                "nll_loss": float(nll_loss.sum()),
+                "ppl": 2 ** float(nll_loss.sum() / target.shape[0]),
             },
         )
 

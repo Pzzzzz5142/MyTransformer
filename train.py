@@ -74,7 +74,7 @@ def train(
 
         if (ind // update_freq) % 100 == 0 and ind % update_freq == 0:
             print(
-                f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample} lr: {float(optim.param_groups[0]['lr'])}"
+                f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample} ppl: {logging_info['ppl']} lr: {float(optim.param_groups[0]['lr'])}"
             )
             total_loss = 0
             total_sample = 0
@@ -85,10 +85,13 @@ def train(
         model.eval()
         for samples in tqdm(valid_data):
             samples = samples.to(device).get_batch()
-            loss, sample_size = criteration(model, **samples)
+            loss, logging_info = criteration(model, **samples)
+            sample_size = logging_info["valid tokens num"]
             total_loss += loss
             total_sample += sample_size
-        print(f"Epoch: {epoch} Valid loss: {float(total_loss / total_sample)}")
+        print(
+            f"Epoch: {epoch} Valid loss: {float(total_loss / total_sample)} ppl: {logging_info['ppl']}"
+        )
 
     with open(os.path.join(save_dir, f"epoch{epoch}.pt"), "wb") as fl:
         torch.save(model, fl)
