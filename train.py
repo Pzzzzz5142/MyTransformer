@@ -93,10 +93,12 @@ def train(
             samples = samples.to(device).get_batch()
             loss, logging_info = criteration(model, **samples)
             sample_size = logging_info["valid tokens num"]
+            ppl += logging_info["ppl"]
+            training_epoch += 1
             total_loss += loss
             total_sample += sample_size
         print(
-            f"Epoch: {epoch} Valid loss: {float(total_loss / total_sample)} ppl: {logging_info['ppl']}"
+            f"Epoch: {epoch} Valid loss: {float(total_loss / total_sample)} ppl: {ppl/training_epoch}"
         )
 
     with open(os.path.join(save_dir, f"epoch{epoch}.pt"), "wb") as fl:
