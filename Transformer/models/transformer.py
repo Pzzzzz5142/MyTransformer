@@ -103,6 +103,8 @@ class Transformer(nn.Module):
         decoder_layers,
         share_embeddings=True,
         post_norm=True,
+        share_decoder_embedding=True,
+        **kwargs
     ):
         super().__init__()
 
@@ -128,34 +130,24 @@ class Transformer(nn.Module):
         self.dropout1 = nn.Dropout(0.1)
         self.dropout2 = nn.Dropout(0.1)
 
-        # self.trans = nn.Transformer(
-        #    model_dim,
-        #    head_num,
-        #    encoder_layers,
-        #    decoder_layers,
-        #    ffn_dim,
-        #    batch_first=True,
-        #    norm_first=True,
-        # )
         self.encoder = TransformerEncoder(
-            model_dim, ffn_dim, head_num, encoder_layers, post_norm=False
+            model_dim, ffn_dim, head_num, encoder_layers, post_norm=post_norm, **kwargs
         )
         self.decoder = TransformerDecoder(
-            model_dim, ffn_dim, head_num, decoder_layers, post_norm=False
+            model_dim, ffn_dim, head_num, decoder_layers, post_norm=post_norm, **kwargs
         )
 
         self.fc = nn.Linear(
             model_dim, vocab_size if isinstance(vocab_size, int) else vocab_size[1]
         )
 
-        for p in self.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
+        nn.init.xavier_uniform(self.fc.weight)
 
-        # if share_embeddings:
-        #     self.fc.weight = self.embedding.weight
-        # else:
-        #     self.fc.weight = self.decoder_emb.weight
+        if share_decoder_embedding:
+            if share_embeddings:
+                self.fc.weight = self.embedding.weight
+            else:
+                self.fc.weight = self.decoder_emb.weight
 
     def forward(self, input_tokens, output_tokens) -> torch.Tensor:
 

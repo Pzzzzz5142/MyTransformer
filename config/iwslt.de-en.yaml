@@ -4,3 +4,4 @@ head_num: 4
 encoder_layers: 6
 decoder_layers: 6
 post_norm: false
+share_decoder_embedding: false

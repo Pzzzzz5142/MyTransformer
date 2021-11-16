@@ -1,6 +1,7 @@
 import torch
 from Transformer.data import WordDict
-
+import numpy as np
+import random
 
 def handle_device(args):
     if args.device == "cuda":
@@ -55,3 +56,9 @@ def bpe_it(sentence: str, vocab_info: WordDict):
             ans.append("<unk>")
 
     return " ".join(ans)
+
+def ensure_reproducibility(seed:int):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.use_deterministic_algorithms(True)

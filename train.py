@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import torch
 import yaml
 from torch import nn
-from torch.optim import AdamW, Adam
+from torch.optim import Adam
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
@@ -15,15 +15,14 @@ from Transformer.criteration import CrossEntropyWithLabelSmoothing
 from Transformer.data import prepare_dataloader
 from Transformer.handle import TransformerLrScheduler, handle_device
 from Transformer.models import Transformer
-from torchtext.datasets import IWSLT2016
 
 
 def init_option(parser: ArgumentParser):
 
-    parser.add_argument("--seed",default=2,type=int)
+    parser.add_argument("--seed", default=2, type=int)
 
     # training settings
-    parser.add_argument("--adam-betas", default=(0.99, 0.98), type=tuple)
+    parser.add_argument("--adam-betas", default=(0.99, 0.997), type=tuple)
     parser.add_argument("--adam-eps", default=1e-9, type=float)
     parser.add_argument("--label-smoothing-eps", default=0.1, type=float)
     parser.add_argument("--model-config", default="config/base.yaml")
@@ -63,7 +62,8 @@ def train(
     for ind, samples in enumerate(tqdm(train_data)):  # Training
         samples = samples.to(device).get_batch()
         ind = ind + 1
-        loss, sample_size = criteration(model, **samples)
+        loss, logging_info = criteration(model, **samples)
+        sample_size = logging_info["valid tokens num"]
         loss.backward()
         if ind % update_freq == 0:
             optim.step()

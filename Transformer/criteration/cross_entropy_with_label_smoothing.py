@@ -16,15 +16,6 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
         padding_idx = model.vocab_info.padding_idx
 
         target = target.view(-1)
-        return (
-            F.cross_entropy(
-                net_output.view(-1, net_output.shape[-1]),
-                target,
-                reduction="sum",
-                ignore_index=padding_idx,
-            ),
-            target[target != padding_idx].shape[-1],
-        )
 
         log_prob = net_output.view(-1, net_output.shape[-1]).log_softmax(-1)[
             target != padding_idx
@@ -34,10 +25,17 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
         false_weight = self.eps / net_output.shape[-1]
         true_weight = 1 - self.eps
 
-        true_loss = -log_prob.gather(-1, target.unsqueeze(1)).squeeze(-1)
+        nll_loss = -log_prob.gather(-1, target.unsqueeze(1)).squeeze(-1)
         false_loss = -log_prob.sum(-1)
 
-        loss = true_loss * true_weight + false_loss * false_weight
+        loss = nll_loss * true_weight + false_loss * false_weight
 
-        return loss.sum(), target.shape[0]
+        return (
+            loss.sum(),
+            {
+                "valid tokens num": int(target.shape[0]),
+                "nll_loss": float(nll_loss),
+                "ppl": 2 ** float(nll_loss),
+            },
+        )
 
