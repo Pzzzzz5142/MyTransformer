@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class CrossEntropyWithLabelSmoothing(nn.Module):
@@ -15,6 +16,16 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
         padding_idx = model.vocab_info.padding_idx
 
         target = target.view(-1)
+        return (
+            F.cross_entropy(
+                net_output.view(-1, net_output.shape[-1]),
+                target,
+                reduction="sum",
+                ignore_index=padding_idx,
+            ),
+            target[target != padding_idx].shape[-1],
+        )
+
         log_prob = net_output.view(-1, net_output.shape[-1]).log_softmax(-1)[
             target != padding_idx
         ]

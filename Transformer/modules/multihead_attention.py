@@ -15,7 +15,6 @@ class MultiHeadAttention(nn.Module):
 
         self.scale = 1 / math.sqrt(key_dim)
         self.drop_out = nn.Dropout(drop_out)
-        self.layer_norm = nn.LayerNorm(model_dim)
 
         self.head_num = head_num
         self.model_dim = model_dim
@@ -94,17 +93,15 @@ class MultiHeadAttention(nn.Module):
             attn_weights = attn_weights.masked_fill(padding_mask, float("-inf"))
 
         attn_weights = attn_weights.softmax(-1)
+        attn_weights = self.drop_out(attn_weights)
 
         res = torch.bmm(attn_weights, v)  # B*head_num x L x H//head_num
 
         res = res.transpose(0, 1)
         res = res.reshape(L, -1, self.model_dim)
+        res = res.transpose(0, 1)
 
         res = self.fc(res)
-        res = self.drop_out(res)
-        res = res + net_input
-        res = res.transpose(0, 1)
-        res = self.layer_norm(res)
 
         return res, attn_weights
 

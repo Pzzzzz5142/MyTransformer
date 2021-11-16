@@ -14,15 +14,22 @@ def Embedding(num_embeddings, embedding_dim, padding_idx):
     return m
 
 
+nn.Transformer
+
+
 class TransformerEncoder(nn.Module):
-    def __init__(self, model_dim, ffn_dim, head_num, encoder_layers):
+    def __init__(self, model_dim, ffn_dim, head_num, encoder_layers, post_norm=True):
         super().__init__()
 
         self.layers = nn.ModuleList()
+        if not post_norm:
+            self.layer_norm = nn.LayerNorm(model_dim)
 
         self.layers.extend(
             [
-                TransformerEncoderLayer(head_num, model_dim, ffn_dim)
+                TransformerEncoderLayer(
+                    head_num, model_dim, ffn_dim, post_norm=post_norm
+                )
                 for _ in range(encoder_layers)
             ]
         )
@@ -39,37 +46,48 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             x, _ = layer(x, padding_mask, attn_mask)
 
+        if hasattr(self, "layer_norm"):
+            x = self.layer_norm(x)
+
         return x
 
 
 class TransformerDecoder(nn.Module):
-    def __init__(self, model_dim, ffn_dim, head_num, decoder_layers):
+    def __init__(self, model_dim, ffn_dim, head_num, decoder_layers, post_norm=True):
         super().__init__()
 
         self.layers = nn.ModuleList()
 
+        if not post_norm:
+            self.layer_norm = nn.LayerNorm(model_dim)
+
         self.layers.extend(
             [
-                TransformerDecoderLayer(head_num, model_dim, ffn_dim)
+                TransformerDecoderLayer(
+                    head_num, model_dim, ffn_dim, post_norm=post_norm
+                )
                 for _ in range(decoder_layers)
             ]
         )
 
     def forward(
         self,
-        net_input: torch.Tensor,
+        dex: torch.Tensor,
         padding_mask: torch.Tensor,
         attn_mask: Optional[torch.Tensor] = None,
         prev_input: Optional[torch.Tensor] = None,
         prev_input_padding_mask: Optional[torch.Tensor] = None,
     ):
 
-        x = net_input
+        x = dex
 
         for layer in self.layers:
             x, _ = layer(
                 x, padding_mask, attn_mask, prev_input, prev_input_padding_mask
             )
+
+        if hasattr(self, "layer_norm"):
+            x = self.layer_norm(x)
 
         return x
 
@@ -84,6 +102,7 @@ class Transformer(nn.Module):
         encoder_layers,
         decoder_layers,
         share_embeddings=True,
+        post_norm=True,
     ):
         super().__init__()
 
@@ -106,22 +125,41 @@ class Transformer(nn.Module):
                 vocab_size[1], model_dim, padding_idx=self.padding_idx
             )
 
-        self.dropout = nn.Dropout(0.1)
-        self.encoder = TransformerEncoder(model_dim, ffn_dim, head_num, encoder_layers)
-        self.decoder = TransformerDecoder(model_dim, ffn_dim, head_num, decoder_layers)
+        self.dropout1 = nn.Dropout(0.1)
+        self.dropout2 = nn.Dropout(0.1)
+
+        # self.trans = nn.Transformer(
+        #    model_dim,
+        #    head_num,
+        #    encoder_layers,
+        #    decoder_layers,
+        #    ffn_dim,
+        #    batch_first=True,
+        #    norm_first=True,
+        # )
+        self.encoder = TransformerEncoder(
+            model_dim, ffn_dim, head_num, encoder_layers, post_norm=False
+        )
+        self.decoder = TransformerDecoder(
+            model_dim, ffn_dim, head_num, decoder_layers, post_norm=False
+        )
 
         self.fc = nn.Linear(
             model_dim, vocab_size if isinstance(vocab_size, int) else vocab_size[1]
         )
 
-        if share_embeddings:
-            self.fc.weight = self.embedding.weight
-        else:
-            self.fc.weight = self.decoder_emb.weight
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+
+        # if share_embeddings:
+        #     self.fc.weight = self.embedding.weight
+        # else:
+        #     self.fc.weight = self.decoder_emb.weight
 
     def forward(self, input_tokens, output_tokens) -> torch.Tensor:
 
-        en_padding_mask = input_tokens == self.padding_idx
+        en_padding_mask = input_tokens.eq(self.padding_idx)
 
         if self.share_embeddings:
             x = self.embedding(input_tokens)
@@ -131,24 +169,24 @@ class Transformer(nn.Module):
 
         pos = self.__generate_pos_matrix(x)
         x = x + pos  # add position embedding
-        x = self.dropout(x)
+        x = self.dropout1(x)
 
         encoder_out = self.encoder(x, en_padding_mask)
 
-        de_padding_mask = output_tokens == self.padding_idx
+        de_padding_mask = output_tokens.eq(self.padding_idx)
 
         if self.share_embeddings:
-            x = self.embedding(output_tokens)
+            dex = self.embedding(output_tokens)
         else:
-            x = self.decoder_emb(output_tokens)
-        x = x * math.sqrt(self.model_dim)
+            dex = self.decoder_emb(output_tokens)
+        dex = dex * math.sqrt(self.model_dim)
 
-        pos = self.__generate_pos_matrix(x)
-        x = x + pos
-        x = self.dropout(x)
+        pos = self.__generate_pos_matrix(dex)
+        dex = dex + pos
+        dex = self.dropout2(dex)
 
         decoder_out = self.decoder(
-            x,
+            dex,
             de_padding_mask,
             prev_input=encoder_out,
             prev_input_padding_mask=en_padding_mask,
@@ -168,7 +206,9 @@ class Transformer(nn.Module):
             ]
             for pos in range(x.shape[-2])
         ]
-        pos = x.new_tensor(pos)
+
+        pos = x.new_tensor(pos, requires_grad=False)
+
         return pos
 
     @torch.no_grad()

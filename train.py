@@ -15,9 +15,12 @@ from Transformer.criteration import CrossEntropyWithLabelSmoothing
 from Transformer.data import prepare_dataloader
 from Transformer.handle import TransformerLrScheduler, handle_device
 from Transformer.models import Transformer
+from torchtext.datasets import IWSLT2016
 
 
 def init_option(parser: ArgumentParser):
+
+    parser.add_argument("--seed",default=2,type=int)
 
     # training settings
     parser.add_argument("--adam-betas", default=(0.99, 0.98), type=tuple)
@@ -69,10 +72,12 @@ def train(
         total_loss += float(loss)
         total_sample += int(sample_size)
 
-        if (ind // update_freq) % 100 == 0:
+        if (ind // update_freq) % 100 == 0 and ind % update_freq == 0:
             print(
                 f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample} lr: {float(optim.param_groups[0]['lr'])}"
             )
+            total_loss = 0
+            total_sample = 0
 
     with torch.no_grad():  # Validating
         total_loss = 0
@@ -109,11 +114,9 @@ def trainer(args):
         args.batching_strategy,
         args.batching_long_first,
     )
-
     with open(args.model_config, "r", encoding="utf-8") as model_config:
         model_dict = yaml.load(model_config, Loader=Loader)
         model = Transformer(vocab_info, **model_dict).to(device)
-
     train_data, _ = prepare_dataloader(
         args.data,
         args.src_lang,
