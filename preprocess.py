@@ -3,17 +3,7 @@ import os.path as path
 from multiprocessing import Pool
 import os
 import pickle
-
-
-def init_options(parser: ArgumentParser):
-
-    parser.add_argument("--data-path", required=True)
-    parser.add_argument("--src-lang", required=True)
-    parser.add_argument("--tgt-lang", required=True)
-    parser.add_argument("--dist-dir", default="data-bin")
-    parser.add_argument("--workers", type=int, default=8)
-    parser.add_argument("--vocab-name", default="bpevocab")
-    parser.add_argument("--lines-per-thread", type=int, default=1000)
+from Transformer.handle import init_preprocess_options
 
 
 def handle_data_single_worker(src_lines, tgt_lines, word2ind, is_test):
@@ -110,9 +100,9 @@ def solve(args):
                 src_res += res[0]
                 tgt_res += res[1]
 
-        with open(
-            path.join(dist_dir, f"{split}.{args.src_lang}"), "wb"
-        ) as src, open(path.join(dist_dir, f"{split}.{args.tgt_lang}"), "wb") as tgt:
+        with open(path.join(dist_dir, f"{split}.{args.src_lang}"), "wb") as src, open(
+            path.join(dist_dir, f"{split}.{args.tgt_lang}"), "wb"
+        ) as tgt:
             pickle.dump(src_res, src)
             pickle.dump(tgt_res, tgt)
 
@@ -121,7 +111,7 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
 
-    init_options(parser)
+    init_preprocess_options(parser)
 
     args = parser.parse_args()
 

@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 import os
 import torch
-from Transformer.handle import handle_device, remove_bpe, bpe_it
+from Transformer.handle import handle_device, remove_bpe
 from Transformer.models import Transformer
 import pickle
 

@@ -14,9 +14,6 @@ def Embedding(num_embeddings, embedding_dim, padding_idx):
     return m
 
 
-nn.Transformer
-
-
 class TransformerEncoder(nn.Module):
     def __init__(self, model_dim, ffn_dim, head_num, encoder_layers, post_norm=True):
         super().__init__()
@@ -274,6 +271,6 @@ class Transformer(nn.Module):
                 last_token = sentence.split()[-1]
                 if last_token == self.vocab_info.idx2word(self.vocab_info.eos_idx):
                     return " ".join(sentence.split()[1:-1])
-                elif len(sentence.split())>200:
+                elif len(sentence.split()) > 200:
                     return " ".join(sentence.split()[1:-1])
 
