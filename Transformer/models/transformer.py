@@ -268,10 +268,12 @@ class Transformer(nn.Module):
             net_output = net_output.index_select(0, net_output_topk)  # beam_size x L+1
             total_prob = total_prob.index_select(0, net_output_topk)
             sentences = self.vocab_info.detokenize(net_output)
-            print("\n".join([(remove_bpe(sent)) for sent in sentences]))
+            # print("\n".join([(remove_bpe(sent)) for sent in sentences]))
 
             for sentence in sentences:
                 last_token = sentence.split()[-1]
                 if last_token == self.vocab_info.idx2word(self.vocab_info.eos_idx):
-                    return sentence
+                    return " ".join(sentence.split()[1:-1])
+                elif len(sentence.split())>200:
+                    return " ".join(sentence.split()[1:-1])
 

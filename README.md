@@ -6,7 +6,7 @@
 
 ## 已实现部分
 
-+ 少量的 BUG。
++ 少量的 BUG。（test bleu 30.77）
 + Data preprocessing
 + DataLoading
     + Memory Pinning [reference](https://pytorch.org/docs/stable/data.html#memory-pinning)
@@ -22,7 +22,9 @@
 
 ## Known Issue
 
-+ post norm无法训练收敛
++ post norm 无法训练收敛
++ inference 性能问题
++ 测试集 sacrebleu 30.77
 
 ## Usage
 
@@ -35,7 +37,7 @@ python preprocess.py --data-path ~/path/to/iwslt14.tokenized.de-en --target-lang
 训练
 
 ```
-python train.py --data data-bin/iwslt14.tokenized.de-en --src-lang de --tgt-lang en --epoch 3
+python train.py --data data-bin/iwslt14.tokenized.de-en --src-lang de --tgt-lang en --epoch 3 --model-config config/iwslt.de-en.yaml
 ```
 
 推断

@@ -36,6 +36,9 @@ def solve(args):
             f"Source:\n{remove_bpe(src_sent)}\nTarget:\n{' '.join(tgt_sent)}\nPredict:\n{remove_bpe(predict_sent)}\n"
         )
 
+        with open("ab.txt", "a+") as fl:
+            print(remove_bpe(predict_sent), file=fl)
+
         continue
 
 
