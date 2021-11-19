@@ -13,7 +13,11 @@ from yaml import Loader
 
 from Transformer.criteration import CrossEntropyWithLabelSmoothing
 from Transformer.data import prepare_dataloader
-from Transformer.handle import TransformerLrScheduler, handle_device
+from Transformer.handle import (
+    TransformerLrScheduler,
+    handle_device,
+    ensure_reproducibility,
+)
 from Transformer.models import Transformer
 
 
@@ -108,6 +112,7 @@ def train(
 def trainer(args):
 
     device = handle_device(args)
+    ensure_reproducibility(args.seed)
 
     save_dir = args.save_dir.strip()
 
