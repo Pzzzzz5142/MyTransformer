@@ -78,6 +78,12 @@ class TransformerDecoder(nn.Module):
 
         x = dex
 
+        future_mask = self.__generate_future_mask(x)
+        if attn_mask == None:
+            attn_mask = future_mask
+        else:
+            attn_mask = attn_mask.logical_or(future_mask)
+
         for layer in self.layers:
             x, _ = layer(
                 x, padding_mask, attn_mask, prev_input, prev_input_padding_mask
@@ -87,6 +93,17 @@ class TransformerDecoder(nn.Module):
             x = self.layer_norm(x)
 
         return x
+
+    def __generate_future_mask(self, net_input):
+        attn_mask = torch.triu(
+            net_input.new_ones(
+                (net_input.shape[0], net_input.shape[1], net_input.shape[1]),
+                dtype=torch.bool,
+            ),
+            diagonal=1,
+        )  # Future mask
+
+        return attn_mask
 
 
 class Transformer(nn.Module):

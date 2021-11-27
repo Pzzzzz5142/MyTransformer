@@ -36,13 +36,6 @@ class TransformerDecoderLayer(nn.Module):
     ):
 
         assert net_input.shape[0] == prev_input.shape[0]
-        attn_mask = torch.triu(
-            net_input.new_ones(
-                (net_input.shape[0], net_input.shape[1], net_input.shape[1]),
-                dtype=torch.bool,
-            ),
-            diagonal=1,
-        )  # Future mask
 
         if self.post_norm:
             res, x = net_input, net_input

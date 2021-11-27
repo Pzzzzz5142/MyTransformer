@@ -42,7 +42,7 @@ def init_option(parser: ArgumentParser):
     parser.add_argument("--src-lang", required=True)
     parser.add_argument("--tgt-lang", required=True)
     parser.add_argument("--batching-strategy", default="tgt_src")
-    parser.add_argument("--batching-long-first", type=bool, default=True)
+    parser.add_argument("--batching-short-first", action="store_true", default=False)
 
     return parser
 
@@ -128,8 +128,9 @@ def trainer(args):
         "valid",
         args.max_tokens,
         args.batching_strategy,
-        args.batching_long_first,
+        not args.batching_short_first,
     )
+
     with open(args.model_config, "r", encoding="utf-8") as model_config:
         model_dict = yaml.load(model_config, Loader=Loader)
         model = Transformer(vocab_info, **model_dict).to(device)
@@ -140,7 +141,7 @@ def trainer(args):
         "train",
         args.max_tokens,
         args.batching_strategy,
-        args.batching_long_first,
+        not args.batching_short_first,
     )
 
     print(model)
