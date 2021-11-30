@@ -28,7 +28,7 @@
 
     知乎链接🔗：[从 0 开始的 Transformer 复现·数据（二）](https://zhuanlan.zhihu.com/p/438123116)
 
-    + Data preprocessing
+    + Data Preprocessing
     + DataLoading
         + Memory Pinning [reference](https://pytorch.org/docs/stable/data.html#memory-pinning)
 
@@ -39,7 +39,7 @@
     + LayerNorm [reference](https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html?highlight=layer#torch.nn.LayerNorm)
     + Pre-norm & Post-norm
     
-+ Label smooth cross entropy
++ Label Smooth Cross Entropy
     
     知乎链接🔗：tbd
     
