@@ -2,7 +2,7 @@
 
 试着写写，Transformer。锻炼锻炼，手部肌肉。
 
-目前本项目仅支持已经经过 bpe 分词的数据文件训练。同时该模型在给定的iwslt14.de-en数据集上使用post-norm方法并不能够收敛，同时相比标准Trans former模型，BLEU差的有点多（标准Transformer BLEU 34.44），因此可能还有潜在的bug。
+目前本项目仅支持已经经过 bpe 分词的数据文件训练。同时该模型在给定的 iwslt14.de-en 数据集上使用post-norm方法并不能够收敛，同时相比标准 Transformer 模型，BLEU 差的有点多（标准 Transformer BLEU 34.44），因此可能还有潜在的 bug。
 
 | Model         | Sacrebleu | 1-gram BLEU | 2-gram BLEU | 3-gram BLEU | 4-gram BLEU | BLEU-4 |
 | ------------- | --------- | ----------- | ----------- | ----------- | ----------- | ------ |
