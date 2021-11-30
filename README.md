@@ -8,22 +8,52 @@
 | ------------- | --------- | ----------- | ----------- | ----------- | ----------- | ------ |
 | MyTransformer | 30.77     | 0.6023      | 0.3713      | 0.2480      | 0.1635      | 0.2543 |
 
+目前实现本项目的心得已总结在个人博客！欢迎大家来看！
+
+[MyTransformer](https://pzzzzz5142.github.io/学习/NLP/MyTransformer)
+
+当然，报告没写完😅。最近考试比较多，然后还有几个想法没有得到验证，有些地方实现的还比较粗糙，所以后面的内容后面再补吧。
+
+同时为了方便大家阅读和讨论~~（我博客的评论区寄了，我也懒的研究怎么修了）~~，这篇报告我也按照下方顺序将其拆分为几篇文章挂到知乎上了，当然最新进展还是以上方博客为主~~（最近应该是不会有什么进展）~~，欢迎大家点赞投币收藏（bushi。
 
 ## 已实现部分
 
+知乎链接🔗：[从 0 开始的 Transformer 复现·前言（一）](https://zhuanlan.zhihu.com/p/437981886)
+
 + 少量的 BUG。
-+ Data preprocessing
-+ DataLoading
-    + Memory Pinning [reference](https://pytorch.org/docs/stable/data.html#memory-pinning)
+
+    ~~（想啥呢，怎么可能专门介绍 Bug 的）~~
+
++ Data
+
+    知乎链接🔗：[从 0 开始的 Transformer 复现·数据（二）](https://zhuanlan.zhihu.com/p/438123116)
+
+    + Data preprocessing
+    + DataLoading
+        + Memory Pinning [reference](https://pytorch.org/docs/stable/data.html#memory-pinning)
+
 + Transformer 模型
+    
+    知乎链接🔗：[从 0 开始的 Transformer 复现·模型（三）](https://zhuanlan.zhihu.com/p/438632726)
+
     + LayerNorm [reference](https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html?highlight=layer#torch.nn.LayerNorm)
     + Pre-norm & Post-norm
+    
 + Label smooth cross entropy
+    
+    知乎链接🔗：tbd
+    
     + Ignore padding index [reference](https://discuss.pytorch.org/t/ignore-index-in-the-cross-entropy-loss/25006/9)
+    
 + Training 部分
+    
+    知乎链接🔗：tbd
+    
     + lr_scheduler
-
+    
 + Inference 部分（写了一个比较 low 的 beam search）
+
+    知乎链接🔗：tbd
 
 ## Known Issues
 
