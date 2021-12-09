@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import torch
 import yaml
 from torch import nn
-from torch.optim import Adam
+from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
@@ -28,6 +28,8 @@ def init_option(parser: ArgumentParser):
     # training settings
     parser.add_argument("--adam-betas", default=(0.99, 0.997), type=tuple)
     parser.add_argument("--adam-eps", default=1e-9, type=float)
+    parser.add_argument("--optim", choices=["adam", "adamw"], default="adam")
+    parser.add_argument("--lr", type=float, default=5e-4)
     parser.add_argument("--label-smoothing-eps", default=0.1, type=float)
     parser.add_argument("--model-config", default="config/base.yaml")
     parser.add_argument("--warmup-steps", type=int, default=4000)
@@ -146,7 +148,14 @@ def trainer(args):
 
     print(model)
 
-    optim = Adam(model.parameters(), betas=args.adam_betas, eps=args.adam_eps)
+    if args.optim == "adam":
+        optim = Adam(
+            model.parameters(), lr=args.lr, betas=args.adam_betas, eps=args.adam_eps
+        )
+    else:
+        optim = AdamW(
+            model.parameters(), lr=args.lr, betas=args.adam_betas, eps=args.adam_eps
+        )
     scheduler = TransformerLrScheduler(
         optim, model_dict["model_dim"], args.warmup_steps
     )
