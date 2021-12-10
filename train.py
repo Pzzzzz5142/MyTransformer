@@ -17,36 +17,9 @@ from Transformer.handle import (
     TransformerLrScheduler,
     handle_device,
     ensure_reproducibility,
+    init_train_options,
 )
 from Transformer.models import Transformer
-
-
-def init_option(parser: ArgumentParser):
-
-    parser.add_argument("--seed", default=2, type=int)
-
-    # training settings
-    parser.add_argument("--adam-betas", default=(0.99, 0.997), type=tuple)
-    parser.add_argument("--adam-eps", default=1e-9, type=float)
-    parser.add_argument("--optim", choices=["adam", "adamw"], default="adam")
-    parser.add_argument("--lr", type=float, default=5e-4)
-    parser.add_argument("--label-smoothing-eps", default=0.1, type=float)
-    parser.add_argument("--model-config", default="config/base.yaml")
-    parser.add_argument("--warmup-steps", type=int, default=4000)
-    parser.add_argument("--device", default="cuda")
-    parser.add_argument("--epoch", default=3, type=int)
-    parser.add_argument("--save-dir", default="")
-    parser.add_argument("--update-freq", type=int, default=1)
-
-    # data settings
-    parser.add_argument("--data", required=True)
-    parser.add_argument("--max-tokens", type=int, default=4096)
-    parser.add_argument("--src-lang", required=True)
-    parser.add_argument("--tgt-lang", required=True)
-    parser.add_argument("--batching-strategy", default="tgt_src")
-    parser.add_argument("--batching-short-first", action="store_true", default=False)
-
-    return parser
 
 
 def train(
@@ -150,11 +123,19 @@ def trainer(args):
 
     if args.optim == "adam":
         optim = Adam(
-            model.parameters(), lr=args.lr, betas=args.adam_betas, eps=args.adam_eps
+            model.parameters(),
+            lr=args.lr,
+            betas=args.adam_betas,
+            eps=args.adam_eps,
+            weight_decay=args.weight_decay,
         )
     else:
         optim = AdamW(
-            model.parameters(), lr=args.lr, betas=args.adam_betas, eps=args.adam_eps
+            model.parameters(),
+            lr=args.lr,
+            betas=args.adam_betas,
+            eps=args.adam_eps,
+            weight_decay=args.weight_decay,
         )
     scheduler = TransformerLrScheduler(
         optim, model_dict["model_dim"], args.warmup_steps
@@ -179,7 +160,7 @@ def trainer(args):
 if __name__ == "__main__":
     parser = ArgumentParser()
 
-    parser = init_option(parser)
+    parser = init_train_options(parser)
 
     args = parser.parse_args()
 
