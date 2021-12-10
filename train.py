@@ -38,14 +38,14 @@ def train(
     total_sample = 0
     model.train()
     optim.zero_grad()
-    ppl = 0
+    nll_loss = 0
     training_epoch = 0
     for ind, samples in enumerate(tqdm(train_data)):  # Training
         samples = samples.to(device).get_batch()
         ind = ind + 1
         loss, logging_info = criteration(model, **samples)
         sample_size = logging_info["valid tokens num"]
-        ppl += logging_info["ppl"]
+        nll_loss += logging_info["nll_loss"]
         training_epoch += 1
         loss.backward()
         if ind % update_freq == 0:
@@ -56,28 +56,33 @@ def train(
         total_sample += int(sample_size)
 
         if (ind // update_freq) % 100 == 0 and ind % update_freq == 0:
+            total_loss = float(total_loss) / total_sample
+            nll_loss = float(nll_loss) / total_sample
             print(
-                f"Epoch: {epoch} Training loss: {float(total_loss) / total_sample} ppl: {ppl/training_epoch} lr: {float(optim.param_groups[0]['lr'])}"
+                f"Epoch: {epoch} Training loss: {total_loss} nll loss: {nll_loss} ppl: {2**nll_loss} lr: {float(optim.param_groups[0]['lr'])}"
             )
             total_loss = 0
             total_sample = 0
-            ppl = 0
+            nll_loss = 0
             training_epoch = 0
 
     with torch.no_grad():  # Validating
         total_loss = 0
         total_sample = 0
+        nll_loss = 0
         model.eval()
         for samples in tqdm(valid_data):
             samples = samples.to(device).get_batch()
             loss, logging_info = criteration(model, **samples)
             sample_size = logging_info["valid tokens num"]
-            ppl += logging_info["ppl"]
+            nll_loss += logging_info["nll_loss"]
             training_epoch += 1
             total_loss += loss
             total_sample += sample_size
+        total_loss = float(total_loss) / total_sample
+        nll_loss = float(nll_loss) / total_sample
         print(
-            f"Epoch: {epoch} Valid loss: {float(total_loss / total_sample)} ppl: {ppl/training_epoch}"
+            f"Epoch: {epoch} Valid loss: {total_loss} nll loss: {nll_loss} ppl: {2**nll_loss}"
         )
 
     with open(os.path.join(save_dir, f"epoch{epoch}.pt"), "wb") as fl:

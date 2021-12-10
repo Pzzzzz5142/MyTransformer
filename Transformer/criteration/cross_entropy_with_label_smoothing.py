@@ -34,7 +34,6 @@ class CrossEntropyWithLabelSmoothing(nn.Module):
             {
                 "valid tokens num": int(target.shape[0]),
                 "nll_loss": float(nll_loss.sum()),
-                "ppl": 2 ** float(nll_loss.sum() / target.shape[0]),
             },
         )
 
