@@ -65,7 +65,7 @@
 预处理数据。数据在[这里](https://git.io/JPK9N)下载。
 
 ```
-python preprocess.py --data-path ~/path/to/iwslt14.tokenized.de-en --target-lang en --source-lang de
+python preprocess.py --data-path ~/path/to/iwslt14.tokenized.de-en --tgt-lang en --src-lang de
 ```
 
 训练
